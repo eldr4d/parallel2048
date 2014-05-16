@@ -1,33 +1,8 @@
-#include "Client-comm.hpp"
+#include "Communication/Client-comm.hpp"
 #include "Board.hpp"
 
-
-#define DEFAULT_NODELIMIT 200000
-
+using namespace std;
 Board board;
-
-int GetNodeLimit(int argc, char * argv[])
-{
-  if (argc < 5) return DEFAULT_NODELIMIT;
-  return atoi(argv[4]);
-}
-
-
-void GetHost(int argc, char * argv[], char *host)
-{
-  if (argc < 4) 
-    strcpy(host, "localhost");
-  else 
-    strcpy(host, argv[3]);
-}
-
-
-int GetPort(int argc, char * argv[])
-{
-  if (argc < 3) return PORT;
-  return atoi(argv[2]);
-}
-
 
 int GetSide(int argc, char *argv[])
 {
@@ -40,7 +15,7 @@ int GetSide(int argc, char *argv[])
             !strcmp(argv[1], "PLACER"))
             return PLACER;
         else {
-            printf ("Usage: %s <normal|placer> [server-port] [server-host] [nodelimit]\n", argv[0]);
+            cout << "Usage: " << argv[0] << " <normal|placer> [server-port] [server-host] [nodelimit]" << endl;
             exit (0);
         }
 }
@@ -52,8 +27,8 @@ void GetUserMove (int *dir)
     
     while (!legal) {
     	char ch;
-        printf ("Input move (u,r,d,l): ");
-        scanf ("%c", &ch);
+        cout << "Input move (u,r,d,l): " << endl;
+        cin >> ch;
         switch(ch){
         	case 'u':
         		*dir = 0;
@@ -95,7 +70,6 @@ int main (int argc, char *argv[])
     int             row, col, dir, socket, value;
     int            side;
     int             totalnodes;
-    int             nodelimit = GetNodeLimit(argc, argv);
     unsigned short  port;
     char            host[100];
 
@@ -103,17 +77,17 @@ int main (int argc, char *argv[])
 
 
     if (argc < 2) {
-         printf ("Usage: %s <normal|placer> [server-port] [server-host] [nodelimit]\n", 
-		 argv[0]);
-         exit (0);
+		cout << "Usage: " << argv[0] << " <normal|placer> [server-port] [server-host] [nodelimit]" << endl;
+		exit (0);
     }
 
     side = GetSide(argc, argv); /* Decide whether the player is WHITE or RED */
     port = GetPort(argc, argv);
     GetHost(argc, argv, host);
-    printf("Server Port: %d\n", port);
-    printf("Server Host: %s\n", host );
-	printf("Side: %d\n",side);
+    cout << "Server Port: " << port << endl;
+    cout << "Server Host: " << host << endl;
+    cout << "Side: " << side << endl;
+
     StartSession (&socket, side, port, host);
 		        
 	for(int x=0; x<BOARD_SIZE; x++){
@@ -137,7 +111,7 @@ int main (int argc, char *argv[])
 						board.grid[x][y] = msg.grid[x][y];
 					}
 				}
-				printf ("My move is %d,%d v = %d\n\n", row, col, value);
+				cout << "My move is " << row << "," << col << " v = " << value << endl << endl;
 			}else{
 				GetUserMove(&dir);
 				SendNormalAndGetPlacerMove(socket, dir, &msg);
@@ -147,7 +121,7 @@ int main (int argc, char *argv[])
 						board.grid[x][y] = msg.grid[x][y];
 					}
 				}
-				printf ("My move is %d\n\n", dir);
+				cout << "My move is " << dir << endl << endl;
 			}
 
 			sleep (1);
@@ -155,12 +129,13 @@ int main (int argc, char *argv[])
 	
         }
         if (msg.status == GAME_ENDED)
-        	printf ("Game ended!!\n");
+        	cout << "Game ended!!" << endl;
 
     } while (msg.status != ABORT);
 
     EndSession (socket);
-    printf ("Session ended!!\n");
+   	cout << "Session ended!!" << endl;
+
 
     exit (EXIT_SUCCESS);
 }

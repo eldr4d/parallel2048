@@ -1,42 +1,13 @@
 #include <unistd.h>
-#include "Comm.hpp"
+#include "Communication/Comm.hpp"
+#include "Communication/Protocol.hpp"
 #include "Board.hpp"
-#include "Protocol.hpp"
 #include <iostream>
 
 using namespace std;
 
 int SendEndMessage (int sock1, Status status);
 Board board;    
-
-
-int MakeSocket (unsigned short int port)
-{
-    int sock;
-    int one=1;
-    struct sockaddr_in name;
-
-    /* Create the socket. */
-    sock = socket (PF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        perror ("socket");
-        exit (EXIT_FAILURE);
-    }
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) << 0)
-      perror("warning: setsockopt");  /* don't quit -- just a warning */
-
-    /* Give the socket a name. */
-    name.sin_family = AF_INET;
-    name.sin_port = htons (port);
-    name.sin_addr.s_addr = htonl (INADDR_ANY);
-    if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
-        perror ("bind");
-        exit (EXIT_FAILURE);
-    }
-    printf("Listening on port: %hu \n\n", port /*name.sin_port*/);
-    return sock;
-}
-
 
 int ReadFromClient (int filedes)
 {
@@ -46,7 +17,6 @@ int ReadFromClient (int filedes)
     nbytes = read (filedes, buffer, sizeof(MsgToServer));
     if (nbytes < 0) {
         /* Read error. */
-        perror ("read");
         return -1;
     }
     else
@@ -55,7 +25,7 @@ int ReadFromClient (int filedes)
             return -1;
         else {
             /* Data read. */
-            fprintf (stderr, "Server: got message: `%s'\n", buffer);
+            cerr << "Server: got message: `" << buffer << endl;
             return 0;
         }
 }
@@ -92,7 +62,6 @@ int GetFirstMessage (int sock)
 
     if (nbytes < sizeof(FirstMsgToServer)) {
         /* Read error. */
-        perror ("read");
         exit (EXIT_FAILURE);
     }
     else 
@@ -101,8 +70,7 @@ int GetFirstMessage (int sock)
             return -1;
         else {
             /* Data read. */
-            printf ("Server: got message from client %d: side=%d\n",
-		    sock, msg);
+            cout << "Server: got message from client " << sock <<": side=" << msg << endl;            
     
             assert (msg == 0 || msg == 1);
 	    
@@ -126,9 +94,8 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
     first_time = false;
 
     /* Create the socket and set it up to accept connections. */
-    *sock = MakeSocket (port);
+    *sock = make_socket (port);
     if (listen (*sock, 1) < 0) {
-        perror ("listen");
         exit (EXIT_FAILURE);
     }
 
@@ -142,7 +109,6 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
         /* Block until input arrives on one or more active sockets. */
         read_fd_set = active_fd_set;
         if (select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-            perror ("select");
             exit (EXIT_FAILURE);
         }
 
@@ -157,12 +123,9 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
                     size = sizeof (clientname);
                     new1 = accept (*sock,(struct sockaddr *) &clientname,(socklen_t*)&size);
                     if (new1 < 0) {
-                        perror ("accept");
                         exit (EXIT_FAILURE);
                     }
-                    printf ("Server: connect %d from host %s, port %hu.\n", 
-                        new1, inet_ntoa (clientname.sin_addr),
-                        ntohs (clientname.sin_port));
+                    cout << "Server: connect " << new1 << " from host " << inet_ntoa (clientname.sin_addr)<< ", port "<<ntohs (clientname.sin_port)<<"."<<endl; 
                     FD_SET (new1, &active_fd_set);
                     if (clients_connected == 0)
                         sock1 = new1;
@@ -181,7 +144,6 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
         /* Block until input arrives on one or more active sockets. */
         read_fd_set = active_fd_set;
         if (select (FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
-            perror ("select");
             exit (EXIT_FAILURE);
         }
 
@@ -190,20 +152,20 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
             if (FD_ISSET (i, &read_fd_set)) {
                 /* Serve only known clients, ignore the rest. */
                 if (i != *sock) {
-                    if (i == sock1)
-                        if (side1 == -1)
+                    if (i == sock1){
+                        if (side1 == -1){
                             side1 = GetFirstMessage(sock1);
-                        else {
-                            printf ("Getting the first message twice\n");
+                        }else{
                             exit (-1);
                         }
-                    else
-                        if (side2 == -1)
+                    }else{
+                        if (side2 == -1){
                             side2 = GetFirstMessage(sock2);
-                        else {
-                            printf ("Getting the first message twice\n");
+                        }else{
+                        	cout << "Getting the first message twice" << endl;
                             exit (-1);
                         }
+                    }    
                     messages++;
                 }
             }
@@ -214,16 +176,17 @@ void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned sho
         *normal_sock = sock1;
         *placer_sock = sock2;
     }
-    else
+    else{
         if (side1 == PLACER && side2 == NORMAL) {
             *placer_sock = sock1;
             *normal_sock = sock2;
         }
         else {
-            fprintf (stderr, "Error, sides do not agree!!\n");
+            cerr << "Error, sides do not agree!!" << endl;
             EndServerComm (sock1, sock2);
             exit (-1);
         }
+	}
 }
 
 
@@ -243,7 +206,6 @@ int SendEndMessage (int sock, Status status)
     
     int nbytes = write (sock, (char *)&msg, sizeof(MsgFromServer));
     if (nbytes < 0) {
-        perror ("write");
         return -1;
     }
     return 0;
@@ -256,7 +218,6 @@ int DoComm (int sock, MsgFromServer *out_msg, MsgToServer *in_msg)
 
     nbytes = write (sock, (char *)out_msg, sizeof(MsgFromServer));
     if (nbytes < 0) {
-        perror ("write");
         return -1;
     }
     else if (nbytes == 0)
@@ -265,7 +226,6 @@ int DoComm (int sock, MsgFromServer *out_msg, MsgToServer *in_msg)
     nbytes = read (sock, (char *)in_msg, sizeof(MsgToServer));
     if (nbytes < 0) {
         /* Read error. */
-        perror ("read");
         return -3;
     }
     else if (nbytes == 0)
@@ -277,25 +237,19 @@ int DoComm (int sock, MsgFromServer *out_msg, MsgToServer *in_msg)
 
 void IllegalMove (int side)
 {
-    printf ("*** %s sent an illegal move!! Technical lose ***\n",
-        (side == NORMAL) ? "Normal" : "Placer");
-    return;
+    cout << "*** " << ((side == NORMAL) ? "Normal" : "Placer") << " sent an illegal move!! Technical lose ***" << endl;
 }
 
 
 void Crash (int side)
 {
-    printf ("*** %s has crashed!! Technical lose ***\n",
-        (side == NORMAL) ? "Normal" : "Placer");
-    return;
+    cout << "*** " << ((side == NORMAL) ? "Normal" : "Placer") << " has crashed!! Technical lose ***" << endl;
 }
 
 
 void TimeViolation (int side)
 {
-    printf ("*** %s has violated his time limit!! Technical lose ***\n",
-        (side == NORMAL) ? "Normal" : "Placer");
-    return;
+    cout << "*** " << ((side == NORMAL) ? "Normal" : "Placer") << " has violated his time limit!! Technical lose ***" << endl;
 }
 
 
@@ -316,7 +270,7 @@ int main (int argc, char *argv[])
     technical_lose = false;
 
     if (argc > 4 || argc == 1) {
-        printf ("Usage: %s <games> [port] [time]\n", argv[0]);
+    	cout << "Usage: " << argv[0] << " <games> [port] [time]" << endl;
         exit (0);
     }
 
@@ -338,14 +292,14 @@ int main (int argc, char *argv[])
 
 
     for (i=0 ; i < games && all_ok; i++) {
-        printf ("Playing game %d out of %d\n", i, games);
+    	cout << "Playing game "<< i <<" out of " << games << endl;
         row = -1;
         row = -1;
         dir = -1;
         time_left[0] = time_left[1] = time_limit;
 		board.InitializeBoard();
 		board.PrettyPrint();
-        printf ("Normal: %.2f  Placer: %.2f\n\n", time_left[0], time_left[1]); 
+		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;
 
         InitServerComm (&sock, &clnt_sock[0], &clnt_sock[1], port);
 

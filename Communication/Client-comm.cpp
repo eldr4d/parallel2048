@@ -5,26 +5,40 @@
 static clock_t end_of_time; 
 static clock_t move_start; 
 
+void GetHost(int argc, char * argv[], char *host)
+{
+	if (argc < 4) 
+		strcpy(host, "localhost");
+	else 
+		strcpy(host, argv[3]);
+}
 
-void InitSockaddr (struct sockaddr_in *name, const char *hostname,
-		   unsigned short int port)
+
+int GetPort(int argc, char * argv[])
+{
+	if (argc < 3)
+		return PORT;
+	return atoi(argv[2]);
+}
+
+void InitSockaddr (struct sockaddr_in *name, const char *hostname, unsigned short int port)
 {   
-    struct hostent *hostinfo;
+	struct hostent *hostinfo;
     
-    name->sin_family = AF_INET;
-    name->sin_port = htons (port);
+	name->sin_family = AF_INET;
+	name->sin_port = htons (port);
     
-    /* If hostname is not defined, assume the server is on my machine */
-    if (hostname == NULL || hostname[0] == NULL)
-      hostinfo = gethostbyname ("localhost");
-    else 
-      hostinfo = gethostbyname (hostname);
-    if (hostinfo == NULL) {
-      fprintf (stderr, "Unknown host %s.\n", hostname);
-      exit (EXIT_FAILURE);
-    }
+	/* If hostname is not defined, assume the server is on my machine */
+	if (hostname == NULL || hostname[0] == NULL)
+		hostinfo = gethostbyname ("localhost");
+	else 
+		hostinfo = gethostbyname (hostname);
+	if (hostinfo == NULL) {
+		std::cerr << "Unknown host " << hostname << "." << std::endl;
+		exit (EXIT_FAILURE);
+	}
     
-    name->sin_addr = *(struct in_addr *) hostinfo->h_addr;
+	name->sin_addr = *(struct in_addr *) hostinfo->h_addr;
 }       
 
 
@@ -36,7 +50,6 @@ int InitClientComm (int server_port, char *server_host)
     /* Create the socket. */
     sock = socket (PF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-        perror ("socket (client)");
         exit (EXIT_FAILURE);
     }
     
@@ -45,7 +58,6 @@ int InitClientComm (int server_port, char *server_host)
 
     if (0 > connect (sock, (struct sockaddr *) &servername,
                      sizeof (servername))) {
-        perror ("connect (client)");
         exit (EXIT_FAILURE);
     }
     return sock;
@@ -60,8 +72,6 @@ void GetMessageFromServer (int sock, MsgFromServer *msg)
 
     nbytes = read (sock, (char *)msg, sizeof(MsgFromServer));
     if (nbytes < sizeof(MsgFromServer)) {
-        perror ("read error");
-        printf ("Received only %d bytes\n", nbytes);
         exit (EXIT_FAILURE);
     }
 
@@ -69,7 +79,7 @@ void GetMessageFromServer (int sock, MsgFromServer *msg)
     move_start = clock();
     end_of_time = move_start + (clock_t)(msg->time_left * CLOCKS_PER_SEC);
     if (end_of_time < move_start) {
-       perror ("clock() may wrap around during this game");
+       std::cerr << "clock() may wrap around during this game" << std::endl;
     }
 }
 
@@ -81,14 +91,14 @@ void SendFirstMessage (int sock, int side)
 
     assert (side == 0 || side == 1);
     to_msg = side;
-	printf("Side =: %d\n",to_msg);
+	std::cout << "Side =: " << to_msg << std::endl;
     nbytes = write (sock, (char *)&to_msg, sizeof(FirstMsgToServer));
     if (nbytes < sizeof(FirstMsgToServer)) {
-        perror ("write first message");
+
         exit (EXIT_FAILURE);
     }
-
-    printf ("Sent first message to server side=%d\n", side);
+	
+    std::cout << "Sent first message to server side=" << side << std::endl;
 }
 
 
@@ -98,7 +108,7 @@ void StartSession (int *sock, int side, int server_port, char *server_host)
 
     ret = clock();  /* Start CPU clock counter. */
     if (ret == (clock_t) -1) {
-        perror ("clock() failed");
+        std::cerr << "clock() failed" << std::endl;
         exit (EXIT_FAILURE);
     }
 
@@ -126,7 +136,6 @@ void SendPlacerAndGetNormalMove (int sock, int row, int col, int value, MsgFromS
 
     nbytes = write (sock, (char *)&msgToServ, sizeof(MsgToServer));
     if (nbytes < sizeof(MsgToServer)) {
-        perror ("write message");
         exit (EXIT_FAILURE);
     }
 
@@ -146,7 +155,6 @@ void SendNormalAndGetPlacerMove (int sock, int dir, MsgFromServer *msg)
 
     nbytes = write (sock, (char *)&msgToServ, sizeof(MsgToServer));
     if (nbytes < sizeof(MsgToServer)) {
-        perror ("write message");
         exit (EXIT_FAILURE);
     }
 
