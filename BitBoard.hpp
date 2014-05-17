@@ -1,0 +1,566 @@
+/**
+ * @file BitBoard.hpp
+ * 
+ * @brief Declaration of bitboards for game representation
+ */
+#ifndef _BITBOARD_HPP
+#define _BITBOARD_HPP
+
+#include <stdexcept>
+#include <iomanip>
+#include <iostream>
+#include <cassert>
+#include <cmath>
+#include "BitUtils.hpp"
+
+using namespace std;
+
+/**
+ * @brief Values for each of the 2 directions
+ *
+ * Horizontal or vertical direction
+ */
+enum dir{
+    /**
+     * @brief Horizontal
+     */
+    h = 1,
+    /**
+     * @brief Vertical
+     */
+    v = 4
+};
+
+/**
+ * @brief Values for each of the 4 directions
+ *
+ * Left, right, down, up direction
+ */
+enum d4{
+    /**
+     * @brief Left
+     */
+    left  =  1,
+    /**
+     * @brief Up
+     */
+    up    =  4,
+    /**
+     * @brief Right
+     */
+    right = -1,
+    /**
+     * @brief Down
+     */
+    down  = -4
+};
+
+/**
+ * @brief Constants and functions which depend on direction (2)
+ *
+ * Line masks
+ * 
+ * @tparam          d   direction (vertical, horizontal)
+ */
+template<dir d> class dconsts{
+public:
+    /**
+     * @brief distance in bits of two adjacent positions in current direction
+     */
+    static const int step   = (d == h) ? 1 : 4;
+    /**
+     * @brief bits to shift to move 1 position in current direction
+     */
+    static const int shft1  =  step      ;
+    /**
+     * @brief bits to shift to move 2 positions in current direction
+     */
+    static const int shft2  = (step << 1);
+
+    /**
+     * @brief Masks masking out line 0 in current direction
+     *
+     * Masks out column 0 if direction is horizontal, 
+     * row 0 if direction is vertical
+     */
+    static const uint64 l0  =(d==h)?0xEEEEEEEEEEEEEEEEull:0xFFF0FFF0FFF0FFF0ull;
+    /**
+     * @brief Masks masking out lines 0, 1 in current direction
+     *
+     * Masks out columns 0 and 1 if direction is horizontal, 
+     * row 0 and 1 if direction is vertical
+     */
+    static const uint64 l01 =(d==h)?0xCCCCCCCCCCCCCCCCull:0xFF00FF00FF00FF00ull;
+    /**
+     * @brief Masks masking out line 3 in current direction
+     *
+     * Masks out column 3 if direction is horizontal, 
+     * row 3 if direction is vertical
+     */
+    static const uint64 l3  =(d==h)?0x7777777777777777ull:0x0FFF0FFF0FFF0FFFull;
+    /**
+     * @brief Masks masking out lines 2, 3 in current direction
+     *
+     * Masks out columns 2 and 3 if direction is horizontal, 
+     * row 2 and 3 if direction is vertical
+     */
+    static const uint64 l23 =(d==h)?0x3333333333333333ull:0x00FF00FF00FF00FFull;
+};
+
+/**
+ * @brief Constants and functions which depend on direction (4)
+ *
+ * Line masks and shift operations
+ * 
+ * @tparam          d   direction (left, right, up, down)
+ */
+template<d4 d> class d4c: public dconsts<(dir) abs((int) d)>{
+public:
+    /**
+     * @brief Reverse direction
+     */
+    static const d4  rev    = (d4) -d;
+    /**
+     * @brief Vertical if current direction is up or down, horizontal otherwise
+     */
+    static const dir base   = (dir) abs((int) d);
+
+    /**
+     * @brief Mask without line 0 vertical to current direction
+     * 
+     * For example, if current direction is left, this will be the mask 
+     * excluding column 3.
+     * If direction is up, this will be set to mask out row 0.
+     */
+    static const uint64 r0  = (d > 0) ? dconsts<base>::l0  : dconsts<base>::l3 ;
+    /**
+     * @brief Mask without line 0 and 1 vertical to current direction
+     * 
+     * For example, if current direction is left, this will be the mask 
+     * excluding column 3 and column 2.
+     * If direction is up, this will be set to mask out row 0 and 1.
+     */
+    static const uint64 r01 = (d > 0) ? dconsts<base>::l01 : dconsts<base>::l23;
+    /**
+     * @brief Mask without line 3 vertical to current direction
+     * 
+     * For example, if current direction is left, this will be the mask 
+     * excluding column 0.
+     * If direction is up, this will be set to mask out row 3.
+     */
+    static const uint64 r3  = (d > 0) ? dconsts<base>::l3  : dconsts<base>::l0 ;
+    /**
+     * @brief Mask without line 2 and 3 vertical to current direction
+     * 
+     * For example, if current direction is left, this will be the mask 
+     * excluding column 0 and column 1.
+     * If direction is up, this will be set to mask out row 2 and 3.
+     */
+    static const uint64 r23 = (d > 0) ? dconsts<base>::l23 : dconsts<base>::l01;
+
+    /**
+     * @brief Simulate a left shift
+     *
+     * Performs a shift equivalent to left shift, if directions was 'left'.
+     * Shift is by an amount of @p shftamnt positions.
+     *
+     * @param[in]   x           bitset to shift
+     * @param[in]   shftamnt    number of positions to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 left_shift(uint64 x, unsigned int shftamnt);
+    /**
+     * @brief Simulate a right shift
+     *
+     * Performs a shift equivalent to right shift, if directions was 'left'.
+     * Shift is by an amount of @p shftamnt positions.
+     *
+     * @param[in]   x           bitset to shift
+     * @param[in]   shftamnt    number of positions to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 right_shift(uint64 x, unsigned int shftamnt);
+    /**
+     * @brief Simulate a left shift by 1 position
+     *
+     * Performs a shift equivalent to left shift, if directions was 'left'.
+     * Shifts by one position.
+     *
+     * @param[in]   x           bitset to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 left_shift1(uint64 x);
+    /**
+     * @brief Simulate a right shift by 1 position
+     *
+     * Performs a shift equivalent to right shift, if directions was 'left'.
+     * Shifts by one position.
+     *
+     * @param[in]   x           bitset to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 right_shift1(uint64 x);
+    /**
+     * @brief Simulate a left shift by 2 position
+     *
+     * Performs a shift equivalent to left shift, if directions was 'left'.
+     * Shifts by two positions.
+     *
+     * @param[in]   x           bitset to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 left_shift2(uint64 x);
+    /**
+     * @brief Simulate a right shift by 2 position
+     *
+     * Performs a shift equivalent to right shift, if directions was 'left'.
+     * Shifts by two positions.
+     *
+     * @param[in]   x           bitset to shift
+     *
+     * @return                  result of shifting
+     */
+    static uint64 right_shift2(uint64 x);
+};
+
+/**
+ * @brief tile's value type
+ */
+typedef unsigned int tile_value;
+
+/**
+ * @brief one full board
+ */
+#define FBOARD uint64(0xFFFF)
+
+/**
+ * @brief board's height (and width) size
+ *
+ * CHANGING IT WILL PROBABLY PRODUCE MANY BUGS!!! CHANGE AT YOUR OWN RISK
+ */
+#define BOARD_SIZE (4)
+
+/**
+ * @brief Count of board's squares
+ */
+#define SQR_POP (BOARD_SIZE*BOARD_SIZE)
+
+
+/**
+ * @brief Bitboard to represent game state
+ *
+ * board bits:
+ *
+ * 12 13 14 15 \n
+ * 08 09 10 11 \n
+ * 04 05 06 07 \n
+ * 00 01 02 03 \n
+ */
+template<unsigned int state_size = 4>
+class BitBoard{
+private:
+    /**
+     * bits to represent board's state
+     */
+    uint64 state[state_size]; //(64*4)/16 = 16
+    //state[0] will contain 'occupied' squares as the lower 2 bytes
+    //state[0], bytes 3..2:     '2' squares
+    //state[0], bytes 5..4:     '4' squares
+    //state[0], bytes 7..6:     '8' squares
+    //state[1], bytes 1..0:    '16' squares
+    //state[1], bytes 3..2:    '32'
+    //state[1], bytes 5..4:    '64'
+    //state[1], bytes 7..6:   '128'
+    //state[2], bytes 1..0:   '256' squares
+    //state[2], bytes 3..2:   '512'
+    //state[2], bytes 5..4:  '1024'
+    //state[2], bytes 7..6:  '2048'
+    //state[3], bytes 1..0:  '4096' squares
+    //state[3], bytes 3..2:  '8192'
+    //state[3], bytes 5..4: '16384'
+    //state[3], bytes 7..6: '32768' squares
+
+    /**
+     * Score of current board
+     */
+    int score;
+
+public:
+    /**
+     * @brief Creates a new empty board with two tiles
+     *
+     * New tiles will be of number '2' on coordinates (2, 2) and (2, 3)
+     */
+    BitBoard();
+
+    /**
+     * @brief Sets initial pieces.
+     *
+     * Creates a board such that it contains (at most) two tiles, on coordinates
+     * (@p xa, @p ya) (tile is '2' if @p a_is_2 else '4')
+     * (@p xb, @p yb) (tile is '2' if @p b_is_2 else '4')
+     * 
+     * @param[in]  ya       y coordinate of tile 'a' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  xa       x coordinate of tile 'a' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  a_is_2   true if tile 'a' should be 2, false will produce '4'
+     * @param[in]  yb       y coordinate of tile 'b' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  xb       x coordinate of tile 'b' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  b_is_2   true if tile 'b' should be 2, false will produce '4'
+     * 
+     * @exception  std::invalid_argument        an argument is out of range
+     */
+    BitBoard(unsigned int ya, unsigned int xa, bool a_is_2,
+                unsigned int yb, unsigned int xb, bool b_is_2);
+
+    /**
+     * @brief Asserts bitboard is in an expected state (only for debugging)
+     *
+     * If @p NDEBUG is undefined, asserts that bitboard is in a normal state,
+     * otherwise, it does nothing.
+     *
+     * @post    If @p NDEBUG is undefined and assertion does not fail, the
+     *          board will be on a valid state.
+     */
+    void assert_state() const;
+
+private:
+    /**
+     * @brief Sets initial pieces.
+     *
+     * Resets board such that it contains (at most) two tiles, on coordinates
+     * (@p xa, @p ya) (tile is '2' if @p a_is_2 else '4')
+     * (@p xb, @p yb) (tile is '2' if @p b_is_2 else '4')
+     * 
+     * @param[in]  ya       y coordinate of tile 'a' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  xa       x coordinate of tile 'a' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  a_is_2   true if tile 'a' should be 2, false will produce '4'
+     * @param[in]  yb       y coordinate of tile 'b' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  xb       x coordinate of tile 'b' in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  b_is_2   true if tile 'b' should be 2, false will produce '4'
+     * 
+     * @exception  std::invalid_argument        an argument is out of range
+     */
+    void initialize(unsigned int ya, unsigned int xa, bool a_is_2,
+                    unsigned int yb, unsigned int xb, bool b_is_2);
+
+    /**
+     * @brief Gets value (log) of tile on coordinates (@p y, @p x)
+     *
+     * Checks bitboard for the existence of a tile at (@p y, @p x) and returns 
+     * its log_2(value).
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     *
+     * @return              logarithm (base 2) of value of tile at (@p y, @p x),
+     *                      0 if square is empty.
+     */
+    tile_value getTile(unsigned int y, unsigned int x) const;
+
+    /**
+     * @brief Checks coordinates
+     *
+     * Checks that coordinates are inside board. Board is defined by the square
+     * having its corners at (@p 0, @p 0), (@p BOARD_SIZE-1, @p 0), 
+     * (@p 0, @p BOARD_SIZE-1), (@p BOARD_SIZE-1, @p BOARD_SIZE-1)
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     *
+     * @return              true if coordinates are inside board's borders, 
+     *                      false otherwise.
+     */
+    bool valid_xy(unsigned int y, unsigned int x) const;
+
+    /**
+     * @brief Computes mask for bit at (@p y, @p x) in first bitboard.
+     *
+     * Computes a mask having only one active bit at coordinate (@p y, @p x)
+     * of the first bitboard in one @p uint64 state variable.
+     *
+     * @pre                 valid coordinates
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     *
+     * @post                mask with exactly one active bit, located in 
+     *                      lower @p SQR_POP bits.
+     * 
+     * @return              Computed mask
+     */
+    uint64 xy2mask(unsigned int y, unsigned int x) const;
+
+    /**
+     * @brief Computes mask for bit at (@p y, @p x) in bitboard specified by
+     *          @p pw, inside a @p uint64 state.
+     *
+     * Computes a mask having only one active bit at coordinate (@p y, @p x)
+     * of the bitboard specified using the @p pw argument in one @p uint64 
+     * state variable. Bitboard will be selected by peeking the board
+     * containing tiles being a @p pw power of 2.
+     *
+     * @pre                 valid coordinates
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  pw       power of 2 of targeted bitboard's tiles
+     *
+     * @post                mask with exactly one active bit.
+     * 
+     * @return              Computed mask
+     */
+    uint64 xy2mask(unsigned int y, unsigned int x, unsigned int pw) const;
+
+    /**
+     * @brief Transforms coordinates to board's index
+     *
+     * Computes a index of coordinate (@p y, @p x) in a board.
+     *
+     * @pre                 valid coordinates
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     *
+     * @post                index in {0, 1, ..., @p SQR_POP-1}
+     * 
+     * @return              computed index
+     */
+    unsigned int xy2ind(unsigned int y, unsigned int x) const;
+
+    /**
+     * @brief Fills all boards of a @p uint64 state variable with the board 
+     * located in @p t 's lower @p SQR_POP bits.
+     *
+     * Copies lower board of @p t in every board of result.
+     *
+     * @pre                 only lower board of @p t contains active bits
+     *
+     * @param[in]  t        variable containing only one board in its lower
+     *                      @p SQR_POP bits
+     *
+     * @post                all boards in result have the same state
+     * @post                lower board in result is the same with @p t 's
+     * 
+     * @return              state variable containing multiple replicates of
+     *                      a board
+     */
+    uint64 fill(uint64 t) const;
+
+    /**
+     * @brief Fills all boards of a @p uint64 state variable with the board 
+     * located in @p t 's lower @p SQR_POP bits.
+     *
+     * Copies lower board of @p t in every board of result.
+     *
+     * @param[in]  t        variable containing a board in its lower
+     *                      @p SQR_POP bits
+     *
+     * @post                all boards in result have the same state
+     * @post                lower board in result is the same with @p t 's
+     * 
+     * @return              state variable containing multiple replicates of
+     *                      a board
+     */
+    uint64 mfill(uint64 t) const;
+
+    /**
+     * @brief Computes the occupancy of boards in state @p t
+     *
+     * In every result's board the occupancy of corresponding 's board and its 
+     * left ones (located in state @p t).
+     *
+     * Total of occupancy of @p t will be located in lower board (Board 0).
+     * Board 1 will contain occupancy of boards 1, 2, 3.
+     * Board 2 will contain occupancy of boards 2, 3.
+     * Board 3 will contain higher board of @p t.
+     *
+     * @param[in]  t        state variable whose occupancy is to be found
+     * 
+     * @return              state variable containing multiple occupancy boards
+     */
+    uint64 occu(uint64 t) const;
+
+    /**
+     * @brief Computes the occupancy of board in state @p t
+     *
+     * Computes occupancy of board @p t, having every result's bit deactivated 
+     * if it does not exists to the lower board.
+     *
+     * @param[in]  t        state variable whose occupancy is to be found
+     *
+     * @post                only lower board of result contains active bits
+     * 
+     * @return              state variable containing active bits on its lower
+     *                      board, representing occupancy of @p t
+     */
+    uint64 moccu(uint64 t) const;
+
+    /**
+     * @brief Performs merging on a specific direction
+     *
+     * Performs vertical or horizontal merging, based on @p d.
+     * Only adjacent tiles are merged, no sliding happens.
+     *
+     * New tile will replace the upper one (if horizontal merge) or the left one
+     * (if vertical merge) of the pair of merging tiles.
+     *
+     * @tparam     d       merging direction
+     */
+    template<dir d> void combine();
+
+    /**
+     * @brief Performs slide on a specific direction
+     *
+     * Performs slide in direction specified by @p d.
+     * No merging happens.
+     *
+     * @tparam     d       slide direction
+     */
+    template<d4  d> void compress();
+public:
+    /**
+     * @brief Performs slide on a specific direction
+     *
+     * Performs a move in the direction specified by @p d, doing 
+     * tile merging and sliding as specified by rules.
+     *
+     * @tparam     d       slide direction
+     */
+    template<d4 d> void move();
+
+    /**
+     * @brief Prints board in standard output using a nice format
+     *
+     * Result printed contains multiple lines and has a human friendly format
+     */
+    void prettyPrint() const;
+
+    /**
+     * @brief Prints board in @p out using a nice format
+     *
+     * Result printed contains multiple lines and has a human friendly format
+     *
+     * @param[out]  out     stream to print board
+     */
+    void prettyPrint(ostream& out) const;
+};
+
+/**
+ * @brief Appends to @p os stream board @p obj in a nice format
+ *
+ * Output will be in a human friendly multi-line format
+ *
+ * @param[out]      os      stream to append board to
+ * @param[in]       obj     board to append
+ *
+ * @return                  stream used for output
+ */
+template<unsigned int state_size>
+ostream& operator<<(ostream& os, const BitBoard<state_size>& obj);
+
+#endif /* _BITBOARD_HPP */
