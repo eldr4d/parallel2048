@@ -6,11 +6,11 @@ LDFLAGS =  -lnsl
 OBJ_ALL = Board.o
 SRC_ALL = Board.cpp
 
-OBJ_SER = Server.o
-SRC_SER = Server.cpp
+OBJ_SER = Communication/Comm.o Server.o
+SRC_SER = Communication/Comm.hpp Server.cpp
 
-OBJ_CLN = Client-comm.o Client.o
-SRC_CLN = Client-comm.cpp Client.cpp
+OBJ_CLN = Communication/Client-comm.o Client.o
+SRC_CLN = Communication/Client-comm.cpp Client.cpp
 
 all:client server
 

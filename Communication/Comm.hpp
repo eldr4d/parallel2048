@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,7 +20,7 @@
 
 /* Prototypes for comm.h */
 
-int make_socket (unsigned short int port);
+int make_socket(unsigned short int port);
 void init_sockaddr (struct sockaddr_in *name, const char *hostname,
                unsigned short int port);
 

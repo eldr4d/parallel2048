@@ -1,10 +1,9 @@
-#include "Board.hpp"
-
-/* Messages flowing between the server and the clients */
-
 #ifndef _PROTOCOL_H
 #define _PROTOCOL_H
 
+#include "../Board.hpp"
+
+/* Messages flowing between the server and the clients */
 enum Status {
     GIVE_MOVE=0,
     GAME_ENDED,
@@ -15,10 +14,6 @@ enum player{
 	NORMAL=0,
 	PLACER,
 };
-
-
-/* Original Socket Interface */
-
 
 typedef struct {
     Status          status;
