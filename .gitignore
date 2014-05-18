@@ -8,6 +8,18 @@
 *.so
 *.so.*
 
+# Assembly files
+*.s
+
 # Executables
 client
 server
+*.out
+
+# Junk files
+Main.cpp
+.project
+
+# Doxygen Documentation
+html
+latex

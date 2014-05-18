@@ -378,24 +378,6 @@ private:
     bool valid_xy(unsigned int y, unsigned int x) const;
 
     /**
-     * @brief Computes mask for bit at (@p y, @p x) in first bitboard.
-     *
-     * Computes a mask having only one active bit at coordinate (@p y, @p x)
-     * of the first bitboard in one @p uint64 state variable.
-     *
-     * @pre                 valid coordinates
-     *
-     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
-     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
-     *
-     * @post                mask with exactly one active bit, located in 
-     *                      lower @p SQR_POP bits.
-     * 
-     * @return              Computed mask
-     */
-    uint64 xy2mask(unsigned int y, unsigned int x) const;
-
-    /**
      * @brief Computes mask for bit at (@p y, @p x) in bitboard specified by
      *          @p pw, inside a @p uint64 state.
      *
@@ -414,7 +396,7 @@ private:
      * 
      * @return              Computed mask
      */
-    uint64 xy2mask(unsigned int y, unsigned int x, unsigned int pw) const;
+    uint64 xy2mask(unsigned int y, unsigned int x, unsigned int pw=0) const;
 
     /**
      * @brief Transforms coordinates to board's index
@@ -522,23 +504,179 @@ private:
      * @tparam     d       slide direction
      */
     template<d4  d> void compress();
+
 public:
+    /**
+     * @brief Checks if a tile can be placed
+     *
+     * Checks if there is any empty slot
+     *
+     * @return      true if a tile can be placed, false otherwise
+     */
+    bool existsPlacerMove() const;
+    
+    /**
+     * @brief Tries to place a tile.
+     *
+     * Tries to place a tile on coordinates (@p x, @p y).
+     * If position is occupied, board does not change and false is returned.
+     * Otherwise a tile of value '2' if @p is2 else '4' is placed.
+     * 
+     * @param[in]  y        y coordinate of tile in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  is2      true if tile to be placed should be 2, false if '4'
+     * 
+     * @return              true is tile successfully placed, false if 
+     *                      position was occupied
+     */
+    bool tryPlace(unsigned int y, unsigned int x, bool is2);
+    /**
+     * @brief Checks is it is possible to place a tile at (@p x, @p y).
+     *
+     * Checks if position (@p x, @p y) is empty.
+     * 
+     * @param[in]  y        y coordinate of tile in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile in {0, 1,..., BOARD_SIZE-1}
+     * 
+     * @return              true if position is empty, false otherwise
+     */
+    bool canPlace(unsigned int y, unsigned int x) const;
+    /**
+     * @brief Tries to place a tile.
+     *
+     * Tries to place a tile on position specified by @p m.
+     * If position is occupied, board does not change and false is returned.
+     * Otherwise a tile of value '2' if @p is2 else '4' is placed.
+     *
+     * @pre                 @p m contains exactly one active bit and it is 
+     *                      located in its lower @p SQR_POP bits
+     * 
+     * @param[in]  m        board having an active bit on position of new tile
+     * @param[in]  is2      true if tile to be placed should be 2, false if '4'
+     * 
+     * @return              true is tile successfully placed, false if 
+     *                      position was occupied
+     */
+    bool tryPlace(uint64 m, bool is2);
+    /**
+     * @brief Checks is it is possible to place a tile at @p m.
+     *
+     * Checks if position specified by @p m is empty.
+     * 
+     * @pre                 @p contains exactly one active bit and it is located
+     *                      in its lower @p SQR_POP bits
+     * 
+     * @param[in]  m         board having an active bit on position to check
+     * 
+     * @return              true if position is empty, false otherwise
+     */
+    bool canPlace(uint64 m) const;
+
+    /**
+     * @brief Tries to perform a sliding move on a specific direction
+     *
+     * Based on lower two bits of @p d, tries to make a sliding/merging move
+     * on a specific direction. If move is not possible no changes will be made,
+     * otherwise move is done.
+     *
+     * Direction based on lower bits of @p d, will be:
+     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     *
+     * @param[in]           bitset specifying direction
+     *
+     * @return              true if move is legal, false otherwise
+     */
+    bool tryMove(unsigned int d);
+    /**
+     * @brief Checks if a sliding move on a specific direction is legal
+     *
+     * Based on lower two bits of @p d, checks if a sliding/merging move
+     * on specified direction is legal.
+     *
+     * Direction based on lower bits of @p d, will be:
+     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     *
+     * @param[in]           bitset specifying direction
+     *
+     * @return              true if move is legal, false otherwise
+     */
+    bool existsMove(unsigned int d) const;
+    /**
+     * @brief Checks if a sliding move is legal in any direction
+     *
+     * Checks if there exists a direction, that sliding based on it, is legal
+     *
+     * @return              true iff there exists a legal sliding/merging move
+     */
+    bool existsNormalMove() const;
+    /**
+     * @brief Performs a sliding move on a specific direction
+     *
+     * Based on lower two bits of @p d, performs a sliding/merging move
+     * on specified direction.
+     *
+     * Direction based on lower bits of @p d, will be:
+     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     * 
+     * @pre                 sliding/merging move in direction @p d is legal
+     * 
+     * @param[in]           bitset specifying direction
+     */
+    void move(unsigned int d);
+
+    /**
+     * @brief Randomly places a tile
+     *
+     * Places a tile in a random empty position. Tile will be with 
+     * 10% probability of value '4' and with 90% of value '2'.
+     *
+     * @pre                 there exists an empty position on board
+     */
+    void placeRandom();
+
+    /**
+     * @brief Computes empty tiles
+     *
+     * Computes empty tiles on board
+     * 
+     * @return      a @p uint64 containing a board with every empty square 
+     *              active, on its lower @p SQR_POP bits
+     */
+    uint64 getEmptyTiles();
+
+    /**
+     * @brief Tries to perform slide on a specific direction
+     *
+     * Tries to perform a move in the direction specified by @p d, doing 
+     * tile merging and sliding as specified by rules.
+     *
+     * @tparam      d       slide direction
+     *
+     * @return      true if move was possible, false otherwise
+     */
+    template<d4 d> bool tryMove();
+
+    /**
+     * @brief Checks if a move in direction @p d can be made
+     *
+     * Checks if a move is possible in direction @p d.
+     *
+     * @tparam      d       direction to check for move
+     *
+     * @return      true if a move in direction @p d is possible, 
+     *              false otherwise
+     */
+    template<d4 d> bool existsMove();
+
     /**
      * @brief Performs slide on a specific direction
      *
      * Performs a move in the direction specified by @p d, doing 
      * tile merging and sliding as specified by rules.
      *
-     * @tparam     d       slide direction
+     * @tparam      d       slide direction
      */
     template<d4 d> void move();
-
-    /**
-     * @brief Prints board in standard output using a nice format
-     *
-     * Result printed contains multiple lines and has a human friendly format
-     */
-    void prettyPrint() const;
 
     /**
      * @brief Prints board in @p out using a nice format
@@ -547,7 +685,7 @@ public:
      *
      * @param[out]  out     stream to print board
      */
-    void prettyPrint(ostream& out) const;
+    void prettyPrint(ostream& out=cout) const;
 };
 
 /**

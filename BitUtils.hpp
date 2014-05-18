@@ -19,7 +19,7 @@ typedef unsigned long long int uint64;
 
 /**
  * @brief Prints lower board of @p x, mirrored 
- * (left is right and right is left!)
+ * (left is right and right is left, up is down, down is up!)
  *
  * Prints in a simple format the lower board of @p x, in stream @p out.
  * Row change is signal by string @p del. Before appending board,
@@ -34,7 +34,7 @@ void printLBoard(uint64 x, ostream& out=cout, string del=" ", string pre="");
 
 /**
  * @brief Prints lower row of lower board of @p x, mirrored 
- * (left is right and right is left!)
+ * (left is right and right is left, up is down, down is up!)
  *
  * Prints in a simple format the lower row of lower board of @p x, 
  * in stream @p out.
