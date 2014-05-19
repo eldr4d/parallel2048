@@ -12,6 +12,7 @@ void SendPlacerAndGetNormalMove (int sock, int row, int col, int value, MsgFromS
 void EndSession (int sock);
 void GetHost(int argc, char * argv[], char *host);
 int GetPort(int argc, char * argv[]);
+void GetMessageFromServer (int sock, MsgFromServer *msg);
 
 #endif //_CLIENT_COMM_H
 

@@ -70,7 +70,7 @@ int GetFirstMessage (int sock)
             return -1;
         else {
             /* Data read. */
-            cout << "Server: got message from client " << sock <<": side=" << msg << endl;            
+            cout << "Server: got message from client " << sock <<": side=" << (int)msg << endl;            
     
             assert (msg == 0 || msg == 1);
 	    
@@ -257,7 +257,7 @@ int main (int argc, char *argv[])
 {
     int sock, clnt_sock[2];
     double time_left[2], time_limit;
-    int row, col, dir, i, games;
+    int row, col, dir, i, games, v;
 
     MsgFromServer out_msg;
     MsgToServer in_msg;
@@ -296,6 +296,7 @@ int main (int argc, char *argv[])
         row = -1;
         row = -1;
         dir = -1;
+        v = -1;
         time_left[0] = time_left[1] = time_limit;
 		board.InitializeBoard();
 		board.PrettyPrint();
@@ -314,6 +315,7 @@ int main (int argc, char *argv[])
             }
             out_msg.row = row;
             out_msg.col = col;
+            out_msg.two = v == 1? 1 : 0;
 
             if (DoComm (clnt_sock[NORMAL], &out_msg, &in_msg) < 0) {
                 close (clnt_sock[NORMAL]);
@@ -330,25 +332,28 @@ int main (int argc, char *argv[])
 				break;
 			}
 
-			if (time_left[NORMAL] < 0) {
+			/*if (time_left[NORMAL] < 0) {
 				TimeViolation (NORMAL);
 				technical_lose = true;
 				break;
-			}
+			}*/
 			board.DoNormalMove(in_msg.dir);
-						
+			dir = in_msg.dir;		
 	    	/* Decrease time_left[side] */
 	    	time_left[NORMAL] = time_left[NORMAL] - 1.0; /* Temporary, will make this better */
-
+			cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
 			board.PrettyPrint();
+			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 			
 			//Placer player
+            out_msg.status = GIVE_MOVE;
 			out_msg.time_left = time_left[PLACER];
             for(int x=0; x<BOARD_SIZE; x++){
             	for(int y=0; y<BOARD_SIZE; y++){
            			out_msg.grid[x][y] = board.grid[x][y];
             	}
             }
+			out_msg.dir = dir;
 
             if (DoComm (clnt_sock[PLACER], &out_msg, &in_msg) < 0) {
                 close (clnt_sock[PLACER]);
@@ -366,18 +371,21 @@ int main (int argc, char *argv[])
 				break;
 			}
 
-			if (time_left[PLACER] < 0) {
+			/*if (time_left[PLACER] < 0) {
 				TimeViolation(PLACER);
 				technical_lose = true;
 				break;
-			}
+			}*/
 			board.DoPlacerMove(in_msg.row, in_msg.col, value);
 			row = in_msg.row;
 			col = in_msg.col;
+			v = in_msg.two==true? 1 : 2;
 	    	/* Decrease time_left[side] */
 	    	time_left[PLACER] = time_left[PLACER] - 1.0; /* Temporary, will make this better */
 	    	
+			cout << "+-+-+-+-+- Placer -+-+-+-+-+" << endl;
 			board.PrettyPrint();
+			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 
         }
 

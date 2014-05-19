@@ -1,6 +1,7 @@
 #include "Board.hpp"
 #include <limits.h>
 #include <assert.h>
+#include "Communication/Protocol.hpp"
 
 using namespace std;
 
@@ -15,6 +16,7 @@ void Board::InitializeBoard ()
     //AddRandom();
     grid[2][2] = 1;
     grid[2][3] = 1;
+    higherTile = 1;
     score = 0;
 }
 
@@ -68,7 +70,7 @@ void Board::PrettyPrint ()
 /* Probably not the most efficient implementation ... */
 bool Board::CanNormalMove ()
 {
-	for(int direction = 0; direction < 4; direction++){
+	for(int direction = 0; direction < DIR_SIZE; direction++){
 		if(IsLegalNormalMove(direction)){
 			return true;
 		}
@@ -93,13 +95,13 @@ bool Board::CanPlacerMove()
 
 bool Board::IsLegalNormalMove(int direction)
 {
-	if(direction == 0){
+	if(direction == UP){
 		return MoveUp(true);
-	}else if(direction == 1){
+	}else if(direction == RIGHT){
 		return MoveRight(true);
-	}else if(direction == 2){
+	}else if(direction == DOWN){
 		return MoveDown(true);
-	}else if(direction == 3){
+	}else if(direction == LEFT){
 		return MoveLeft(true);
 	}
 	return false;
@@ -116,13 +118,13 @@ bool Board::IsLegalPlacerMove(int row, int col, int value)
 
 bool Board::DoNormalMove(int direction)
 {
-	if(direction == 0){
+	if(direction == UP){
 		return MoveUp(false);
-	}else if(direction == 1){
+	}else if(direction == RIGHT){
 		return MoveRight(false);
-	}else if(direction == 2){
+	}else if(direction == DOWN){
 		return MoveDown(false);
-	}else if(direction == 3){
+	}else if(direction == LEFT){
 		return MoveLeft(false);
 	}
 	return false;
@@ -196,8 +198,9 @@ bool Board::MoveLeft(bool check){
 bool Board::SlideArray(bool check)
 {
 	bool success = false;
-	int8_t x,t,stop=0;
+	int x,t,stop=0;
 	for(int y=0; y<BOARD_SIZE; y++){
+		stop = 0;
 		for(int x=0; x<BOARD_SIZE; x++) {
 			if (grid[x][y]!=0) {
 				t = FindTarget(x,y,stop);
@@ -214,6 +217,9 @@ bool Board::SlideArray(bool check)
 						grid[t][y] = grid[x][y];
 					}else{
 						grid[t][y]++;
+						if(grid[t][y] > higherTile){
+							higherTile = grid[t][y];
+						}
 					}
 					grid[x][y]=0;
 					success = true;

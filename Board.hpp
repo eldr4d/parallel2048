@@ -22,20 +22,20 @@
 
 class Board{
 public:
-
+	int higherTile;
 	int grid[BOARD_SIZE][BOARD_SIZE];
 	int score;
 
 
 	/* Allocate a new Board, and initialize it to the standard opening position   */
 	Board(){
-		
+		higherTile = 0;
 		srand(time(NULL));
 	    InitializeBoard ();
 	}
 
 	/* Calculate 2^n															  */
-	int myPow(int n){
+	static int myPow(int n){
 		int two = 2;
 		return 2<<(n-1);
 	}
@@ -45,6 +45,7 @@ public:
 
 	/* A simple way to print to board in ASCII (mainly for debug).                */
 	void PrettyPrint ();
+	
 
 	/* Does the side have any legal moves? */
 	bool CanNormalMove();
@@ -62,6 +63,16 @@ public:
 	/* In case of an illegal move, NULL is returned.                              */
 	bool DoNormalMove(int direction);
 	bool DoPlacerMove(int row, int col, int value);
+	
+	
+	//TODO rewrite these functions when bitboard is ready
+	bool biggestTileIsInCorner(){
+		if(grid[0][0] == higherTile || grid[0][BOARD_SIZE-1] == higherTile || grid[BOARD_SIZE-1][0] == higherTile || grid[BOARD_SIZE-1][BOARD_SIZE-1] == higherTile){
+			return true;
+		}else{
+			return false;
+		}
+	}
 	
 	//Add random number to the board
 	void AddRandom() {

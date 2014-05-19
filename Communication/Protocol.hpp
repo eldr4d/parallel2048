@@ -10,6 +10,14 @@ enum Status {
     ABORT,
 };
 
+enum Directions {
+    UP = 0,
+    RIGHT,
+    DOWN,
+    LEFT,
+    DIR_SIZE,
+};
+
 enum player{
 	NORMAL=0,
 	PLACER,

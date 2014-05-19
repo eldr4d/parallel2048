@@ -50,6 +50,7 @@ int InitClientComm (int server_port, char *server_host)
     /* Create the socket. */
     sock = socket (PF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
+    	std::cerr << "Socket not opened" << std::endl;
         exit (EXIT_FAILURE);
     }
     
@@ -58,6 +59,7 @@ int InitClientComm (int server_port, char *server_host)
 
     if (0 > connect (sock, (struct sockaddr *) &servername,
                      sizeof (servername))) {
+    	std::cerr << "Connect failed: " << errno << std::endl;
         exit (EXIT_FAILURE);
     }
     return sock;
@@ -91,10 +93,10 @@ void SendFirstMessage (int sock, int side)
 
     assert (side == 0 || side == 1);
     to_msg = side;
-	std::cout << "Side =: " << to_msg << std::endl;
+	std::cout << "Side =: " << (int)to_msg << std::endl;
     nbytes = write (sock, (char *)&to_msg, sizeof(FirstMsgToServer));
     if (nbytes < sizeof(FirstMsgToServer)) {
-
+		std::cerr << "Exit smaller msg" << std::endl;
         exit (EXIT_FAILURE);
     }
 	
@@ -105,7 +107,6 @@ void SendFirstMessage (int sock, int side)
 void StartSession (int *sock, int side, int server_port, char *server_host)
 {
     int ret;
-
     ret = clock();  /* Start CPU clock counter. */
     if (ret == (clock_t) -1) {
         std::cerr << "clock() failed" << std::endl;

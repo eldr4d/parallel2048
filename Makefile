@@ -1,5 +1,5 @@
-CC = /usr/bin/g++
-CFLAGS = -I. -O3 -I/usr/local/lib/g++-include
+CC = g++
+CFLAGS = -I. -I/usr/local/lib/g++-include 
 
 LDFLAGS =  -lnsl 
 
@@ -21,7 +21,7 @@ server:$(OBJ_ALL) $(OBJ_SER)
 	$(CC) $(CFLAGS) -o server $(OBJ_ALL) $(OBJ_SER) $(LDFLAGS)
 
 client:$(OBJ_ALL) $(OBJ_CLN)
-	$(CC) $(CFLAGS) -o client $(OBJ_ALL) $(OBJ_CLN) $(LDFLAGS)
+	$(CC) -g $(CFLAGS) -o client $(OBJ_ALL) $(OBJ_CLN) $(LDFLAGS)
 
 depend:
 	makedepend $(CFLAGS) $(SRC_SER) $(SRC_CLN) $(SRC_ALL)
