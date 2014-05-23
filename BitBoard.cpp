@@ -101,42 +101,52 @@ tile_value BitBoard<state_size>::getTile(unsigned int y, unsigned int x) const{
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::valid_xy(unsigned int y, unsigned int x) const{
+bool BitBoard<state_size>::valid_xy(unsigned int y, unsigned int x){
     return (y < BOARD_SIZE) && (x < BOARD_SIZE);
 }
 
 template<unsigned int state_size>
 uint64 BitBoard<state_size>::xy2mask(unsigned int y, unsigned int x, 
-                                        unsigned int pw) const{
+                                        unsigned int pw){
     assert(valid_xy(y, x));
     return uint64(1) << (xy2ind(y, x) + SQR_POP * (pw & 3));
 }
 
 template<unsigned int state_size>
-unsigned int BitBoard<state_size>::xy2ind(unsigned int y, unsigned int x) const{
+ptile BitBoard<state_size>::mask2xy(uint64 x){
+    ptile t;
+    unsigned long int sq = square(x);
+    t.row = (sq >> 2) & 0x3;
+    t.col = sq & 0x3;
+    t.vlog = sq >> 4;
+    return t;
+}
+
+template<unsigned int state_size>
+unsigned int BitBoard<state_size>::xy2ind(unsigned int y, unsigned int x){
     assert(valid_xy(y, x));
     return (x + (y*BOARD_SIZE));
 }
 
 template<unsigned int state_size>
-uint64 BitBoard<state_size>::mfill(uint64 t) const{
+uint64 BitBoard<state_size>::mfill(uint64 t){
     return fill(t & FBOARD);
 }
 
 template<unsigned int state_size>
-uint64 BitBoard<state_size>::fill(uint64 t) const{
+uint64 BitBoard<state_size>::fill(uint64 t){
     t |= t << SQR_POP;
     return t | (t << (SQR_POP << 1));
 }
 
 template<unsigned int state_size>
-uint64 BitBoard<state_size>::occu(uint64 t) const{
+uint64 BitBoard<state_size>::occu(uint64 t){
     t |= (t >> (SQR_POP << 1));
     return t | (t >> SQR_POP);
 }
 
 template<unsigned int state_size>
-uint64 BitBoard<state_size>::moccu(uint64 t) const{
+uint64 BitBoard<state_size>::moccu(uint64 t){
     return occu(t) & FBOARD;
 }
 
@@ -278,14 +288,13 @@ void BitBoard<state_size>::compress(){
 
 template<unsigned int state_size> template<d4 d>
 void BitBoard<state_size>::move(){
-    assert(existsMove<d>());
     compress<d>();
     combine<d4c<d>::base>();
     compress<d>();
 }
 
 template<unsigned int state_size> template<d4 d>
-bool BitBoard<state_size>::existsMove(){
+bool BitBoard<state_size>::existsNMove() const{
     if (d4c<d>::r0 & state[0]&d4c<d>::left_shift1(FBOARD^state[0])) return true;
     for (int i = 1 ; i < state_size ; ++i)
         if (d4c<d>::r0 & state[i] & d4c<d>::left_shift1(state[i])) return true;
@@ -293,21 +302,21 @@ bool BitBoard<state_size>::existsMove(){
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::existsNormalMove(){
-    if (existsMove<d4::left>() ) return true;
-    if (existsMove<d4::right>()) return true;
-    if (existsMove<d4::down>() ) return true;
-    if (existsMove<d4::up>()   ) return true;
+bool BitBoard<state_size>::existsNormalMove() const{
+    if (existsNMove<d4::left>() ) return true;
+    if (existsNMove<d4::right>()) return true;
+    if (existsNMove<d4::down>() ) return true;
+    if (existsNMove<d4::up>()   ) return true;
     return false;
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::existsPlacerMove(){
+bool BitBoard<state_size>::existsPlacerMove() const{
     return getEmptyTiles();
 }
 
 template<unsigned int state_size>
-uint64 BitBoard<state_size>::getEmptyTiles(){
+uint64 BitBoard<state_size>::getEmptyTiles() const{
     return (FBOARD & ~state[0]);
 }
 
@@ -339,22 +348,22 @@ void BitBoard<state_size>::move(unsigned int d){
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::existsMove(unsigned int d){
+bool BitBoard<state_size>::existsMove(unsigned int d) const{
     switch(d & 3){
-        case  0: return existsMove<d4::left> ();
-        case  1: return existsMove<d4::down> ();
-        case  2: return existsMove<d4::right>();
-        default: return existsMove<d4::up>   ();
+        case  0: return existsNMove<d4::left> ();
+        case  1: return existsNMove<d4::down> ();
+        case  2: return existsNMove<d4::right>();
+        default: return existsNMove<d4::up>   ();
     }
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::canPlace(unsigned int y, unsigned int x){
+bool BitBoard<state_size>::canPlace(unsigned int y, unsigned int x) const{
     return canPlace(xy2mask(y, x));
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::canPlace(uint64 m){
+bool BitBoard<state_size>::canPlace(uint64 m) const{
     assert(!(m & ~FBOARD));
     return !(state[0] & m);
 }
@@ -377,7 +386,37 @@ bool BitBoard<state_size>::tryPlace(uint64 m, bool is2){
 }
 
 template<unsigned int state_size>
-void BitBoard<state_size>::placeRandom(){
+void BitBoard<state_size>::makePlace(unsigned int y, unsigned int x, bool is2){
+    makePlace(xy2mask(y, x), is2);
+}
+
+template<unsigned int state_size>
+void BitBoard<state_size>::makePlace(uint64 m, bool is2){
+    assert(!(m & ~FBOARD));
+    assert(m);
+    assert(!(m & (m - 1)));
+    assert(!(state[0] & m));
+    state[0] |= m | (m << ( SQR_POP << (is2 ? 0 : 1)));
+}
+
+template<unsigned int state_size>
+void BitBoard<state_size>::undoPlace(unsigned int y, unsigned int x, bool is2){
+    undoPlace(xy2mask(y, x), is2);
+}
+
+template<unsigned int state_size>
+void BitBoard<state_size>::undoPlace(uint64 m, bool is2){
+    assert(!(m & ~FBOARD));
+    assert(m);
+    assert(!(m & (m - 1)));
+    uint64 t = state[0];
+    assert(t & m);
+    assert(t & (m << ( SQR_POP << (is2 ? 0 : 1))));
+    state[0] = t & ~(m | (m << ( SQR_POP << (is2 ? 0 : 1))));
+}
+
+template<unsigned int state_size>
+ptile BitBoard<state_size>::placeRandom(){
     uint64 s = FBOARD & ~state[0];
     assert(s);
     uint64 t = s;
@@ -385,7 +424,18 @@ void BitBoard<state_size>::placeRandom(){
         s = s & (s - 1);
         if (!s) s = t;
     }
-    tryPlace(s & -s, rand()%10);
+    t = s & -s;
+    unsigned int r = rand()%10;
+    tryPlace(t, r);
+    ptile ret = mask2xy(t);
+    ret.vlog = (r) ? 1 : 2;
+    return ret;
+}
+
+template<unsigned int state_size>
+bool BitBoard<state_size>::operator==(const BitBoard<state_size> &other) const {
+    for (int i=0;i < state_size;++i) if (state[i]^other.state[i]) return false;
+    return true;
 }
 
 template<unsigned int state_size>
@@ -400,10 +450,10 @@ template void BitBoard<4u>::move<d4::left>();
 template void BitBoard<4u>::move<d4::right>();
 template void BitBoard<4u>::move<d4::down>();
 template void BitBoard<4u>::move<d4::up>();
-template bool BitBoard<4u>::existsMove<d4::left>();
-template bool BitBoard<4u>::existsMove<d4::right>();
-template bool BitBoard<4u>::existsMove<d4::down>();
-template bool BitBoard<4u>::existsMove<d4::up>();
+template bool BitBoard<4u>::existsNMove<d4::left> () const;
+template bool BitBoard<4u>::existsNMove<d4::right>() const;
+template bool BitBoard<4u>::existsNMove<d4::down> () const;
+template bool BitBoard<4u>::existsNMove<d4::up>   () const;
 /**
  * @brief Appends to @p os stream board @p obj in a nice format
  *

@@ -47,4 +47,18 @@ void printLBoard(uint64 x, ostream& out=cout, string del=" ", string pre="");
  */
 void printLow(uint64 x, ostream& out=cout, string del=" ", string pre="");
 
+/**
+ * @brief Computes index of bit on 64bit integer
+ * 
+ * Computes index of active bit in @p bb
+ *
+ * @pre                     @p bb has exactly one active bit
+ * 
+ * @param[in]       bb      bitset containing bit whose index is to be computed
+ * 
+ * @return                  index of bit in @p bb
+ */
+unsigned long int square(uint64 bb);
+
+uint64 pop_lsb(uint64 &x);
 #endif /* _BITUTILS_HPP */

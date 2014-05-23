@@ -1,7 +1,7 @@
 #ifndef _PROTOCOL_H
 #define _PROTOCOL_H
 
-#include "../Board.hpp"
+#include "../BitBoard.hpp"
 
 /* Messages flowing between the server and the clients */
 enum Status {
@@ -11,10 +11,10 @@ enum Status {
 };
 
 enum Directions {
-    UP = 0,
-    RIGHT,
+    LEFT = 0,
     DOWN,
-    LEFT,
+    RIGHT,
+    UP,
     DIR_SIZE,
 };
 
@@ -29,7 +29,6 @@ typedef struct {
     int             row, col; /* Opponent's last move (if placer)*/
     bool            two; /* Opponent's last move (if placer)*/
     int 			dir; /* Opponent's last move (if normal player); 0 up 1 right 2 down 3 left */
-    int				grid[BOARD_SIZE][BOARD_SIZE];
 	player			pl;
 } MsgFromServer;
 

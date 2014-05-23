@@ -1,13 +1,14 @@
 #include <unistd.h>
 #include "Communication/Comm.hpp"
 #include "Communication/Protocol.hpp"
-#include "Board.hpp"
+#include "BitBoard.hpp"
 #include <iostream>
 
 using namespace std;
 
 int SendEndMessage (int sock1, Status status);
-Board board;    
+typedef BitBoard<4u> BitBoard_t;
+BitBoard_t board;
 
 int ReadFromClient (int filedes)
 {
@@ -198,11 +199,11 @@ int SendEndMessage (int sock, Status status)
     msg.row = -1;           /* Just return something reasonable */
     msg.col = -1;
     
-    for(int x=0; x<BOARD_SIZE; x++){
-    	for(int y=0; y<BOARD_SIZE; y++){
-    		msg.grid[x][y] = board.grid[x][y];
-		}
-	}
+ //    for(int x=0; x<BOARD_SIZE; x++){
+ //    	for(int y=0; y<BOARD_SIZE; y++){
+ //    		msg.grid[x][y] = board.grid[x][y];
+	// 	}
+	// }
     
     int nbytes = write (sock, (char *)&msg, sizeof(MsgFromServer));
     if (nbytes < 0) {
@@ -298,21 +299,21 @@ int main (int argc, char *argv[])
         dir = -1;
         v = -1;
         time_left[0] = time_left[1] = time_limit;
-		board.InitializeBoard();
-		board.PrettyPrint();
+		board.initialize();
+		cout << board << endl;
 		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;
 
         InitServerComm (&sock, &clnt_sock[0], &clnt_sock[1], port);
 
-        while (board.CanNormalMove()==true) {
+        while (board.existsNormalMove()) {
 			//normal player
             out_msg.status = GIVE_MOVE;
             out_msg.time_left = time_left[NORMAL];
-            for(int x=0; x<BOARD_SIZE; x++){
-            	for(int y=0; y<BOARD_SIZE; y++){
-           			out_msg.grid[x][y] = board.grid[x][y];
-            	}
-            }
+            // for(int x=0; x<BOARD_SIZE; x++){
+            // 	for(int y=0; y<BOARD_SIZE; y++){
+           	// 		out_msg.grid[x][y] = board.grid[x][y];
+            // 	}
+            // }
             out_msg.row = row;
             out_msg.col = col;
             out_msg.two = v == 1? 1 : 0;
@@ -326,7 +327,7 @@ int main (int argc, char *argv[])
                 break;
             }
 			/* Side should move */
-			if(board.IsLegalNormalMove(in_msg.dir)==false) {
+			if(!board.tryMove(in_msg.dir)) {
 				IllegalMove (NORMAL);
 				technical_lose = true;
 				break;
@@ -337,22 +338,21 @@ int main (int argc, char *argv[])
 				technical_lose = true;
 				break;
 			}*/
-			board.DoNormalMove(in_msg.dir);
 			dir = in_msg.dir;		
 	    	/* Decrease time_left[side] */
 	    	time_left[NORMAL] = time_left[NORMAL] - 1.0; /* Temporary, will make this better */
 			cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
-			board.PrettyPrint();
+			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 			
 			//Placer player
             out_msg.status = GIVE_MOVE;
 			out_msg.time_left = time_left[PLACER];
-            for(int x=0; x<BOARD_SIZE; x++){
-            	for(int y=0; y<BOARD_SIZE; y++){
-           			out_msg.grid[x][y] = board.grid[x][y];
-            	}
-            }
+            // for(int x=0; x<BOARD_SIZE; x++){
+            // 	for(int y=0; y<BOARD_SIZE; y++){
+           	// 		out_msg.grid[x][y] = board.grid[x][y];
+            // 	}
+            // }
 			out_msg.dir = dir;
 
             if (DoComm (clnt_sock[PLACER], &out_msg, &in_msg) < 0) {
@@ -364,8 +364,7 @@ int main (int argc, char *argv[])
                 break;
             }
 			/* Side should move */
-			int value = in_msg.two == true? 1 : 2;
-			if(board.IsLegalPlacerMove(in_msg.row, in_msg.col, value)==false) {
+			if(board.tryPlace(in_msg.row, in_msg.col, in_msg.two)==false) {
 				IllegalMove (PLACER);
 				technical_lose = true;
 				break;
@@ -376,7 +375,6 @@ int main (int argc, char *argv[])
 				technical_lose = true;
 				break;
 			}*/
-			board.DoPlacerMove(in_msg.row, in_msg.col, value);
 			row = in_msg.row;
 			col = in_msg.col;
 			v = in_msg.two==true? 1 : 2;
@@ -384,7 +382,7 @@ int main (int argc, char *argv[])
 	    	time_left[PLACER] = time_left[PLACER] - 1.0; /* Temporary, will make this better */
 	    	
 			cout << "+-+-+-+-+- Placer -+-+-+-+-+" << endl;
-			board.PrettyPrint();
+			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 
         }

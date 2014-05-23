@@ -16,6 +16,26 @@
 using namespace std;
 
 /**
+ * @brief Coordinate and value of tile
+ *
+ * Value is in logarithmic scale
+ */
+struct ptile{
+    /**
+     * @brief Row in which tile belongs
+     */
+    unsigned int row;
+    /**
+     * @brief Column in which tile belongs
+     */
+    unsigned int col;
+    /**
+     * @brief Value of tile, in logarithmic scale
+     */
+    unsigned int vlog;
+};
+
+/**
  * @brief Values for each of the 2 directions
  *
  * Horizontal or vertical direction
@@ -285,12 +305,12 @@ private:
     //state[3], bytes 5..4: '16384'
     //state[3], bytes 7..6: '32768' squares
 
+public:
     /**
      * Score of current board
      */
     int score;
 
-public:
     /**
      * @brief Creates a new empty board with two tiles
      *
@@ -328,7 +348,6 @@ public:
      */
     void assert_state() const;
 
-private:
     /**
      * @brief Sets initial pieces.
      *
@@ -345,9 +364,9 @@ private:
      * 
      * @exception  std::invalid_argument        an argument is out of range
      */
-    void initialize(unsigned int ya, unsigned int xa, bool a_is_2,
-                    unsigned int yb, unsigned int xb, bool b_is_2);
-
+    void initialize(unsigned int ya = 2, unsigned int xa = 2, bool a_is_2=true,
+                    unsigned int yb = 3, unsigned int xb = 2, bool b_is_2=true);
+private:
     /**
      * @brief Gets value (log) of tile on coordinates (@p y, @p x)
      *
@@ -375,7 +394,7 @@ private:
      * @return              true if coordinates are inside board's borders, 
      *                      false otherwise.
      */
-    bool valid_xy(unsigned int y, unsigned int x) const;
+    static bool valid_xy(unsigned int y, unsigned int x);
 
     /**
      * @brief Computes mask for bit at (@p y, @p x) in bitboard specified by
@@ -396,7 +415,7 @@ private:
      * 
      * @return              Computed mask
      */
-    uint64 xy2mask(unsigned int y, unsigned int x, unsigned int pw=0) const;
+    static uint64 xy2mask(unsigned int y, unsigned int x, unsigned int pw=0);
 
     /**
      * @brief Transforms coordinates to board's index
@@ -412,7 +431,7 @@ private:
      * 
      * @return              computed index
      */
-    unsigned int xy2ind(unsigned int y, unsigned int x) const;
+    static unsigned int xy2ind(unsigned int y, unsigned int x);
 
     /**
      * @brief Fills all boards of a @p uint64 state variable with the board 
@@ -431,7 +450,7 @@ private:
      * @return              state variable containing multiple replicates of
      *                      a board
      */
-    uint64 fill(uint64 t) const;
+    static uint64 fill(uint64 t);
 
     /**
      * @brief Fills all boards of a @p uint64 state variable with the board 
@@ -448,7 +467,7 @@ private:
      * @return              state variable containing multiple replicates of
      *                      a board
      */
-    uint64 mfill(uint64 t) const;
+    static uint64 mfill(uint64 t);
 
     /**
      * @brief Computes the occupancy of boards in state @p t
@@ -465,7 +484,7 @@ private:
      * 
      * @return              state variable containing multiple occupancy boards
      */
-    uint64 occu(uint64 t) const;
+    static uint64 occu(uint64 t);
 
     /**
      * @brief Computes the occupancy of board in state @p t
@@ -480,7 +499,7 @@ private:
      * @return              state variable containing active bits on its lower
      *                      board, representing occupancy of @p t
      */
-    uint64 moccu(uint64 t) const;
+    static uint64 moccu(uint64 t);
 
     /**
      * @brief Performs merging on a specific direction
@@ -506,6 +525,13 @@ private:
     template<d4  d> void compress();
 
 public:
+    static ptile mask2xy(uint64 x);
+
+    void makePlace(unsigned int y, unsigned int x, bool is2);
+    void makePlace(uint64 m, bool is2);
+    void undoPlace(unsigned int y, unsigned int x, bool is2);
+    void undoPlace(uint64 m, bool is2);
+
     /**
      * @brief Checks if a tile can be placed
      *
@@ -631,8 +657,10 @@ public:
      * 10% probability of value '4' and with 90% of value '2'.
      *
      * @pre                 there exists an empty position on board
+     *
+     * @return              coordinate of new tile and its value, in log
      */
-    void placeRandom();
+    ptile placeRandom();
 
     /**
      * @brief Computes empty tiles
@@ -642,7 +670,7 @@ public:
      * @return      a @p uint64 containing a board with every empty square 
      *              active, on its lower @p SQR_POP bits
      */
-    uint64 getEmptyTiles();
+    uint64 getEmptyTiles() const;
 
     /**
      * @brief Tries to perform slide on a specific direction
@@ -666,7 +694,7 @@ public:
      * @return      true if a move in direction @p d is possible, 
      *              false otherwise
      */
-    template<d4 d> bool existsMove();
+    template<d4 d> bool existsNMove() const;
 
     /**
      * @brief Performs slide on a specific direction
@@ -686,6 +714,8 @@ public:
      * @param[out]  out     stream to print board
      */
     void prettyPrint(ostream& out=cout) const;
+
+    bool operator==(const BitBoard<state_size> &other) const;
 };
 
 /**
