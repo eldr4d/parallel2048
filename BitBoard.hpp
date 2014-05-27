@@ -532,6 +532,9 @@ public:
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
 
+    unsigned int countOccupiedTiles() const;
+    unsigned int countFreeTiles() const;
+
     /**
      * @brief Checks if a tile can be placed
      *

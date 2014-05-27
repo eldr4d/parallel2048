@@ -76,6 +76,21 @@ void BitBoard<state_size>::assert_state() const{
 }
 
 template<unsigned int state_size>
+unsigned int BitBoard<state_size>::countOccupiedTiles() const{
+    unsigned int v = state[0] & FBOARD;
+    v = v - ((v >> 1) & 0x5555);
+    v = ((v >> 2) & 0x3333) + (v & 0x3333);
+    v = ((v >> 4) + v) & 0x0F0F;
+    v = ((v >> 8) + v) & 0x00FF;
+    return v;
+}
+
+template<unsigned int state_size>
+unsigned int BitBoard<state_size>::countFreeTiles() const{
+    return 16 - countOccupiedTiles();
+}
+
+template<unsigned int state_size>
 tile_value BitBoard<state_size>::getTile(unsigned int y, unsigned int x) const{
     //tile mask
     uint64 mask  = xy2mask(y, x);
