@@ -264,7 +264,7 @@ int main (int argc, char *argv[])
     MsgToServer in_msg;
     bool all_ok, technical_lose;
     unsigned short port;
-
+    int totalNumberOfInitFours = 0;
 	int side=0;
 
     all_ok = true;
@@ -295,11 +295,12 @@ int main (int argc, char *argv[])
     for (i=0 ; i < games && all_ok; i++) {
     	cout << "Playing game "<< i <<" out of " << games << endl;
         row = -1;
-        row = -1;
+        col = -1;
         dir = -1;
         v = -1;
         time_left[0] = time_left[1] = time_limit;
 		board.initialize();
+        totalNumberOfInitFours = 0;
 		cout << board << endl;
 		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;
 
@@ -369,6 +370,9 @@ int main (int argc, char *argv[])
 				technical_lose = true;
 				break;
 			}
+            if(in_msg.two == false){
+                totalNumberOfInitFours++;
+            }
 
 			/*if (time_left[PLACER] < 0) {
 				TimeViolation(PLACER);

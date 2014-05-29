@@ -76,6 +76,25 @@ void BitBoard<state_size>::assert_state() const{
 }
 
 template<unsigned int state_size>
+tile_value BitBoard<state_size>::getHigherTile(){
+	for (int i = state_size-1 ; i >= 0 ; --i){
+		uint64 t = state[i];
+		if (t){
+			tile_value v = 0;
+			//we only need to check 3 of 4 boards, as t is true...
+			//skip 0 to not get fooled by occupancy board in case of i == 0
+			t >>= SQR_POP;
+			for (int j = 1; j < 4 ; ++j, t >>= SQR_POP){
+			    if (t & FBOARD){
+			    	v = j;
+			    }
+			}
+			return v + (i << 2);
+		}
+	}
+}
+
+template<unsigned int state_size>
 tile_value BitBoard<state_size>::getTile(unsigned int y, unsigned int x) const{
     //tile mask
     uint64 mask  = xy2mask(y, x);

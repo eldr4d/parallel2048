@@ -367,19 +367,6 @@ public:
     void initialize(unsigned int ya = 2, unsigned int xa = 2, bool a_is_2=true,
                     unsigned int yb = 3, unsigned int xb = 2, bool b_is_2=true);
 private:
-    /**
-     * @brief Gets value (log) of tile on coordinates (@p y, @p x)
-     *
-     * Checks bitboard for the existence of a tile at (@p y, @p x) and returns 
-     * its log_2(value).
-     *
-     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
-     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
-     *
-     * @return              logarithm (base 2) of value of tile at (@p y, @p x),
-     *                      0 if square is empty.
-     */
-    tile_value getTile(unsigned int y, unsigned int x) const;
 
     /**
      * @brief Checks coordinates
@@ -532,6 +519,27 @@ public:
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
 
+	/**
+     * @brief Returns the Highest tile of the board
+   	 *
+     * @return              logarithm (base 2) of value of the largest tile
+     */
+    tile_value getHigherTile();
+    
+    /**
+     * @brief Gets value (log) of tile on coordinates (@p y, @p x)
+     *
+     * Checks bitboard for the existence of a tile at (@p y, @p x) and returns 
+     * its log_2(value).
+     *
+     * @param[in]  y        y coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     * @param[in]  x        x coordinate of tile, in {0, 1,..., BOARD_SIZE-1}
+     *
+     * @return              logarithm (base 2) of value of tile at (@p y, @p x),
+     *                      0 if square is empty.
+     */
+    tile_value getTile(unsigned int y, unsigned int x) const;
+    
     /**
      * @brief Checks if a tile can be placed
      *
