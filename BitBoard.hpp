@@ -540,6 +540,9 @@ public:
      */
     tile_value getTile(unsigned int y, unsigned int x) const;
     
+    unsigned int countOccupiedTiles() const;
+    unsigned int countFreeTiles() const;
+
     /**
      * @brief Checks if a tile can be placed
      *

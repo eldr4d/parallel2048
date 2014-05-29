@@ -92,6 +92,18 @@ tile_value BitBoard<state_size>::getHigherTile(){
 			return v + (i << 2);
 		}
 	}
+unsigned int BitBoard<state_size>::countOccupiedTiles() const{
+    unsigned int v = state[0] & FBOARD;
+    v = v - ((v >> 1) & 0x5555);
+    v = ((v >> 2) & 0x3333) + (v & 0x3333);
+    v = ((v >> 4) + v) & 0x0F0F;
+    v = ((v >> 8) + v) & 0x00FF;
+    return v;
+}
+
+template<unsigned int state_size>
+unsigned int BitBoard<state_size>::countFreeTiles() const{
+    return 16 - countOccupiedTiles();
 }
 
 template<unsigned int state_size>
