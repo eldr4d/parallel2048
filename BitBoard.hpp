@@ -519,6 +519,13 @@ public:
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
 
+    /**
+     * @brief Returns true if board contains the given tile
+     *
+     * @return              true if the given tile exist else false
+     */
+     bool tileExist(tile_value tile);
+
 	/**
      * @brief Returns the Highest tile of the board
    	 *

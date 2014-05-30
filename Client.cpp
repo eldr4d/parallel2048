@@ -200,10 +200,10 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 		start = std::chrono::system_clock::now();
 		int32_t bestcost;
 		if(pl == NORMAL){
-			bestcost = negaScout(board,true, move, NORMAL, depth, true, -numeric_limits<int32_t>::max(), numeric_limits<int32_t>::max());
+			bestcost = negaScout(board,true, move, NORMAL, depth, true, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost << endl;
 		}else{
-			bestcost = -negaScout(board,true, move, PLACER, depth, false, -numeric_limits<int32_t>::max(), numeric_limits<int32_t>::max());
+			bestcost = -negaScout(board,true, move, PLACER, depth, false, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost << endl;
 		}
 		end = std::chrono::system_clock::now();

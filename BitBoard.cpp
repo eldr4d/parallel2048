@@ -76,6 +76,11 @@ void BitBoard<state_size>::assert_state() const{
 }
 
 template<unsigned int state_size>
+bool BitBoard<state_size>::tileExist(tile_value tile){
+    return (state[tile>>2]>>(16*(tile&0x3))) & FBOARD;
+}
+
+template<unsigned int state_size>
 tile_value BitBoard<state_size>::getHigherTile(){
 	for (int i = state_size-1 ; i >= 0 ; --i){
 		uint64 t = state[i];
@@ -92,6 +97,9 @@ tile_value BitBoard<state_size>::getHigherTile(){
 			return v + (i << 2);
 		}
 	}
+}
+
+template<unsigned int state_size>
 unsigned int BitBoard<state_size>::countOccupiedTiles() const{
     unsigned int v = state[0] & FBOARD;
     v = v - ((v >> 1) & 0x5555);
