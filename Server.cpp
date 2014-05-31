@@ -300,6 +300,7 @@ int main (int argc, char *argv[])
         v = -1;
         time_left[0] = time_left[1] = time_limit;
 		board.initialize();
+        cout << board.tileExist(1) << " " << board.tileExist(2) << endl;
         totalNumberOfInitFours = 0;
 		cout << board << endl;
 		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;

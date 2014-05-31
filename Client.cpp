@@ -2,17 +2,38 @@
 #include "BitBoard.hpp"
 #include <chrono>
 #include <ctime>
+#include "ThreadPool/ThreadPool.hpp"
 
 #define NDEBUG
+#define NUM_OF_THREADS 5
 
 using namespace std;
+
 typedef BitBoard<4u> BitBoard_t;
 BitBoard_t board;
+
 typedef struct{
-	int dir;
-	int row, col, v;
+    int dir;
+    int row, col, v;
 }Move;
+
+typedef struct{
+    player pl;
+    bool color;
+    int32_t alpha, beta, depth;
+    bool root;
+    BitBoard_t board;
+    Move *move;
+    int32_t *writeResult;
+}maskedArguments;
+
 int32_t negaScout(BitBoard_t board, bool amIroot, Move *move, player pl, int32_t depth, bool color, int32_t alpha, int32_t beta);
+
+void negaScoutWrapper(maskedArguments args){
+    *(args.writeResult) = negaScout(args.board, args.root, args.move, args.pl, args.depth, args.color, args.alpha, args.beta);
+}
+
+ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
 
 int GetSide(int argc, char *argv[])
 {
@@ -191,6 +212,17 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 
     int32_t depth = 9;
 
+    maskedArguments args;
+    args.pl = pl;
+    args.alpha = -(numeric_limits<int32_t>::max()-100000);
+    args.beta = (numeric_limits<int32_t>::max()-100000);
+    args.depth = depth;
+    args.root = true;
+    args.board = board;
+    args.move = move;
+
+
+
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
     std::chrono::duration<double> elapsed_seconds;
@@ -198,12 +230,20 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
     do{
     	cout << depth << endl;
 		start = std::chrono::system_clock::now();
-		int32_t bestcost;
+		int32_t bestcost = 0;
+
+        args.writeResult = &bestcost;
 		if(pl == NORMAL){
-			bestcost = negaScout(board,true, move, NORMAL, depth, true, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+            args.color = true;
+            myThreadPool.useNewThread(args);
+            while(bestcost == 0)
+                usleep(10);
+			//bestcost = negaScout(board,true, move, NORMAL, depth, true, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost << endl;
 		}else{
-			bestcost = -negaScout(board,true, move, PLACER, depth, false, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+            args.color = false;
+            myThreadPool.useNewThread(args);
+			//bestcost = -negaScout(board,true, move, PLACER, depth, false, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost << endl;
 		}
 		end = std::chrono::system_clock::now();
@@ -220,17 +260,16 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 
 int main (int argc, char *argv[])
 {
+
     MsgFromServer   msg;
-    int             dir, socket;
-    int             side;
-    int             totalnodes;
+    int             dir, socket, side;
     unsigned short  port;
     char            host[100];
 
-    srand (time(NULL) % (1 << 24));
+    srand(1);//time(NULL) % (1 << 24));
 
 
-    if (argc < 2) {
+    if(argc < 2) {
 		cout << "Usage: " << argv[0] << " <normal|placer> [server-port] [server-host] [nodelimit]" << endl;
 		exit (0);
     }
@@ -257,19 +296,19 @@ int main (int argc, char *argv[])
 	
         while (msg.status != GAME_ENDED && msg.status != ABORT) {
 			if(side == PLACER){
-				/*ptile c = board.placeRandom();
+				ptile c = board.placeRandom();
                	cout << board << endl;
 		       	SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
 				cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;
-		       	*/
-				Move move;
+		       	
+				/*Move move;
 				ExploreTree(board, &move, PLACER);
 				cout << "My move is " << move.row << " " << move.col << " " << move.v << endl << endl;
 				int twoOrFor = move.v == 0 ? 2 : 1;
                	board.tryPlace(move.row,move.col,move.v);
 				cout << board << endl;
-				
-		       	SendPlacerAndGetNormalMove (socket, move.row, move.col, twoOrFor, &msg);
+		       	SendPlacerAndGetNormalMove (socket, move.row, move.col, twoOrFor, &msg);*/
+
                 if (msg.status == GAME_ENDED || msg.status == ABORT) break;
 #ifndef NDEBUG
                 bool legal =  board.tryMove(msg.dir);
