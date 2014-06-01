@@ -253,9 +253,14 @@ void TimeViolation (int side)
     cout << "*** " << ((side == NORMAL) ? "Normal" : "Placer") << " has violated his time limit!! Technical lose ***" << endl;
 }
 
+int calculateScore(int tile){
+    return tile ? (tile-1)*(1<<tile) : 0;
+}
 
 int main (int argc, char *argv[])
 {
+    srand(time(NULL) % (1 << 24));
+    
     int sock, clnt_sock[2];
     double time_left[2], time_limit;
     int row, col, dir, i, games, v;
@@ -293,15 +298,21 @@ int main (int argc, char *argv[])
 
 
     for (i=0 ; i < games && all_ok; i++) {
-    	cout << "Playing game "<< i <<" out of " << games << endl;
-        row = -1;
-        col = -1;
-        dir = -1;
-        v = -1;
+    	cout << "Playing game " << i << " out of " << games << endl;
+        row = col = dir = v = -1;
         time_left[0] = time_left[1] = time_limit;
-		board.initialize();
-        cout << board.tileExist(1) << " " << board.tileExist(2) << endl;
+		board.clear();
+        ptile c = board.placeRandom();
         totalNumberOfInitFours = 0;
+        if(c.vlog == 2){
+            totalNumberOfInitFours++;
+        }
+        c = board.placeRandom();
+        if(c.vlog == 2){
+            totalNumberOfInitFours++;
+        } 
+
+        out_msg.board = board;
 		cout << board << endl;
 		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;
 
@@ -311,15 +322,11 @@ int main (int argc, char *argv[])
 			//normal player
             out_msg.status = GIVE_MOVE;
             out_msg.time_left = time_left[NORMAL];
-            // for(int x=0; x<BOARD_SIZE; x++){
-            // 	for(int y=0; y<BOARD_SIZE; y++){
-           	// 		out_msg.grid[x][y] = board.grid[x][y];
-            // 	}
-            // }
+            
             out_msg.row = row;
             out_msg.col = col;
             out_msg.two = v == 1? 1 : 0;
-
+            out_msg.board = board;
             if (DoComm (clnt_sock[NORMAL], &out_msg, &in_msg) < 0) {
                 close (clnt_sock[NORMAL]);
                 clnt_sock[NORMAL] = -1; /* Invalid socket */
@@ -343,19 +350,24 @@ int main (int argc, char *argv[])
 			dir = in_msg.dir;		
 	    	/* Decrease time_left[side] */
 	    	time_left[NORMAL] = time_left[NORMAL] - 1.0; /* Temporary, will make this better */
+            board.score = 0;
+            for(unsigned int x = 0; x<BOARD_SIZE; x++){
+                for(unsigned int y = 0; y<BOARD_SIZE; y++){
+                    board.score += calculateScore(board.getTile(y,x));
+                }
+            }
+            board.score -= totalNumberOfInitFours*4;
 			cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
+            cout << totalNumberOfInitFours << endl;
 			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 			
 			//Placer player
             out_msg.status = GIVE_MOVE;
 			out_msg.time_left = time_left[PLACER];
-            // for(int x=0; x<BOARD_SIZE; x++){
-            // 	for(int y=0; y<BOARD_SIZE; y++){
-           	// 		out_msg.grid[x][y] = board.grid[x][y];
-            // 	}
-            // }
+            
 			out_msg.dir = dir;
+            out_msg.board = board;
 
             if (DoComm (clnt_sock[PLACER], &out_msg, &in_msg) < 0) {
                 close (clnt_sock[PLACER]);
@@ -386,7 +398,16 @@ int main (int argc, char *argv[])
 	    	/* Decrease time_left[side] */
 	    	time_left[PLACER] = time_left[PLACER] - 1.0; /* Temporary, will make this better */
 	    	
+            board.score = 0;
+            for(unsigned int x = 0; x<BOARD_SIZE; x++){
+                for(unsigned int y = 0; y<BOARD_SIZE; y++){
+                    board.score += calculateScore(board.getTile(y,x));
+                }
+            }
+            board.score -= totalNumberOfInitFours*4;
+
 			cout << "+-+-+-+-+- Placer -+-+-+-+-+" << endl;
+            cout << totalNumberOfInitFours << endl;
 			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
 

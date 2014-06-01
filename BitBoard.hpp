@@ -366,6 +366,11 @@ public:
      */
     void initialize(unsigned int ya = 2, unsigned int xa = 2, bool a_is_2=true,
                     unsigned int yb = 3, unsigned int xb = 2, bool b_is_2=true);
+
+    /**
+     * @brief delete all the contents of the board
+     **/
+    void clear();
 private:
 
     /**

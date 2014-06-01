@@ -30,6 +30,7 @@ typedef struct {
     bool            two; /* Opponent's last move (if placer)*/
     int 			dir; /* Opponent's last move (if normal player); 0 up 1 right 2 down 3 left */
 	player			pl;
+    BitBoard<4u>    board;
 } MsgFromServer;
 
 
