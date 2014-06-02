@@ -27,10 +27,10 @@ typedef struct{
     int32_t *writeResult;
 }maskedArguments;
 
-int32_t negaScout(BitBoard_t board, bool amIroot, Move *move, player pl, int32_t depth, bool color, int32_t alpha, int32_t beta);
+int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_t alpha, int32_t beta);
 
 void negaScoutWrapper(maskedArguments args){
-    int32_t data = negaScout(args.board, args.root, args.move, args.pl, args.depth, args.color, args.alpha, args.beta);
+    int32_t data = negaScout(args.board, args.move, args.pl, args.depth, args.alpha, args.beta);
     *(args.writeResult) = data;
 }
 
@@ -85,21 +85,23 @@ void GetUserMove (int *dir)
     }
 }
 
-int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){	
+int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
+    int32_t score = 0;
 	if(boardForEv.existsPlacerMove()){
 		int32_t v1;
-		int32_t v2 = boardForEv.getHigherTile();
-		if(v2 == boardForEv.getTile(0,0) || v2 == boardForEv.getTile(0,BOARD_SIZE-1) || v2 == boardForEv.getTile(BOARD_SIZE-1,0) || v2 == boardForEv.getTile(BOARD_SIZE-1,BOARD_SIZE-1)){
-			v1 = 1;
-		}else{
-			v1 = 0;
+        bool inCorner = false;
+		int32_t v2 = boardForEv.getHigherTile(inCorner);
+        score = (1 << v2) + 1;
+		if(inCorner){
+			score <<= 1;
 		}
-		return ((1<<(v2))<<v1)+1;
+		return score;
 	}else{
 		//int32_t v2 = boardForEv.getHigherTile(); 
 		return 0;
 		//return (double)boardForEv.score/100.0; //We do not want to prefer the end of game compared to any other move
 	}
+    return score;
 }         
 
 
@@ -153,15 +155,31 @@ int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl
     }
     return 0;
 }
+
+int32_t search_deeper(BitBoard_t board, player other, int32_t depth, int32_t alpha, int32_t beta, bool &firstChild){
+    int32_t score;
+    if(firstChild == true){
+        // if (other == PLACER) firstChild = false;
+        firstChild = firstChild && (other != PLACER);
+        score = -negaScout(board, NULL, other, depth, -beta, -alpha);
+    } else {
+        score = -negaScout(board, NULL, other, depth, -alpha-1, -alpha);
+        if(alpha < score){
+            score = -negaScout(board, NULL, other, depth, -beta, -score);
+        }
+    }
+    return score;
+}
+
 /************************** MiniMax functions *************************/
-int32_t negaScout(BitBoard_t board, bool root, Move *move, player pl, int32_t depth, bool color, int32_t alpha, int32_t beta){
+int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_t alpha, int32_t beta){
     
     player other = getOtherPlayer(pl);
 
     //An ftasame sta katw katw fyla tote gyrname thn katastash
     if(depth == 0){
         int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
-        temp = color ? temp : -temp;
+        temp = (pl == NORMAL) ? temp : -temp;
         return temp;
     }
 
@@ -170,46 +188,32 @@ int32_t negaScout(BitBoard_t board, bool root, Move *move, player pl, int32_t de
 #endif
     int32_t alph = alpha, bet = beta;
     int32_t best = -numeric_limits<int32_t>::max();
-    bool bestChanged = false;
     bool firstChild = true;
+
+    --depth;                                            //decrease depth
+
     if(pl == PLACER){
         uint64 empty = board.getEmptyTiles();
         while (empty){
-#ifndef NDEBUG
-            BitBoard_t testb = board;
-#endif
             uint64 p = pop_lsb(empty);
             for (unsigned int is2 = 0; is2 < 2 ; ++is2){ // 2 or 4
                 board.makePlace(p, is2);
-                int32_t score;
-                if(firstChild == true){
-                	score = -negaScout(board, false, NULL, other, depth - 1, !color, -bet, -alph);
-                	//firstChild = false;
-                }else{
-                	score = -negaScout(board, false, NULL, other, depth - 1, !color, -alph-1, -alph);
-                	if(alph < score && score < bet){
-                		score = -negaScout(board, false, NULL, other, depth - 1, !color, -bet, -score);
-                	}
-                }
+                int32_t score = search_deeper(board, other, depth, alph, bet, firstChild);
                 board.undoPlace(p, is2);
-#ifndef NDEBUG
-                assert(testb == board);
-#endif
-                if(score>best){
-              		bestChanged = true;
-                    best = score;
-                    if(root){
+
+                if (score >= bet){
+                    return bet;                         //fail-hard beta cut-off
+                }
+                firstChild = false;
+                if (score > alph){
+                    alph = score;
+                    if(move){
                         ptile pt = BitBoard_t::mask2xy(p);
                         move->dir = -1;
                         move->row = pt.row;
                         move->col = pt.col;
                         move->v = is2;
                     }
-                }
-                if(best > alph)
-                    alph = best;
-                if(alph >= bet) { // prun brunch as soon as alpha and beta crosses.
-                    return alph; //lower bound          //fail-soft cut-off
                 }
             }
         }
@@ -221,33 +225,23 @@ int32_t negaScout(BitBoard_t board, bool root, Move *move, player pl, int32_t de
 	    		continue;
 	    	}
             noMove = false;
-            int32_t score;
-            if(firstChild == true){
-            	score = -negaScout(board2, false, NULL, other, depth - 1, !color, -bet, -alph);
-               	firstChild = false;
-            }else{
-            	score = -negaScout(board2, false, NULL, other, depth - 1, !color, -alph-1, -alph);
-            	if(alph < score && score < bet){
-            		score = -negaScout(board2, false, NULL, other, depth - 1, !color, -bet, -score);
-            	}
+            int32_t score = search_deeper(board2, other, depth, alph, bet, firstChild);
+
+            if (score >= bet){
+                return bet;                             //fail-hard beta cut-off
             }
-			if(score>best){
-				best = score;
-              	bestChanged = true;
-				if(root){
-					move->dir = d;
-					move->row = -1;
-				}
-			}
-            if(best > alph)
-                alph = best;
-            if(alph >= bet) { // prun brunch as soon as alpha and beta crosses.
-                return alph; //lower bound          //fail-soft cut-off
+            firstChild = false;
+            if (score > alph){
+                alph = score;
+                if(move){
+                    move->dir = d;
+                    move->row = -1;
+                }
             }
     	}
         if (noMove){
             int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
-            temp = color ? temp : -temp;
+            temp = (pl == NORMAL) ? temp : -temp;
             return temp;
         }
     }
@@ -285,17 +279,17 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //myThreadPool.useNewThread(args);
             //while(bestcost == -99999)
             //    usleep(10);
-			bestcost = negaMaxExpandOneChild(board,true, move, NORMAL, depth, true, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
-	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost << endl;
+			bestcost = negaScout(board, move, NORMAL, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}else{
-            args.pl = PLACER;
-            args.color = false;
-            myThreadPool.useNewThread(args);
-            while(bestcost == -99999)
-                usleep(10);
-            bestcost = -bestcost;
-			//bestcost = -negaScout(board,true, move, PLACER, depth, false, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
-	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost << endl;
+            // args.pl = PLACER;
+            // args.color = false;
+            // myThreadPool.useNewThread(args);
+            // while(bestcost == -99999)
+            //     usleep(10);
+            // bestcost = -bestcost;
+			bestcost = -negaScout(board, move, PLACER, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}
 		end = std::chrono::system_clock::now();
 		elapsed_seconds= end-start;

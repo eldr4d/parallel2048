@@ -410,7 +410,6 @@ int main (int argc, char *argv[])
             cout << totalNumberOfInitFours << endl;
 			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
-
         }
 
         if (!technical_lose){

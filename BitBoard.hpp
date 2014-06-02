@@ -263,6 +263,11 @@ typedef unsigned int tile_value;
 #define FBOARD uint64c(0xFFFF)
 
 /**
+ * @brief Board's corners
+ */
+#define CORNERS uint64c(0x9009)
+
+/**
  * @brief board's height (and width) size
  *
  * CHANGING IT WILL PROBABLY PRODUCE MANY BUGS!!! CHANGE AT YOUR OWN RISK
@@ -540,10 +545,13 @@ public:
 
 	/**
      * @brief Returns the Highest tile of the board
+     *
+     * @param[out] inCorner set to true, if there is a tile having the highest
+     *                      value in corner
    	 *
      * @return              logarithm (base 2) of value of the largest tile
      */
-    tile_value getHigherTile();
+    tile_value getHigherTile(bool &inCorner);
     
     /**
      * @brief Gets value (log) of tile on coordinates (@p y, @p x)
