@@ -77,7 +77,7 @@ void BitBoard<state_size>::assert_state() const{
 
 template<unsigned int state_size>
 bool BitBoard<state_size>::tileExist(tile_value tile){
-    return (state[tile>>2]>>(16*(tile&0x3))) & FBOARD;
+    return (state[tile>>2]>>(SQR_POP*(tile&0x3))) & FBOARD;
 }
 
 template<unsigned int state_size>
@@ -475,6 +475,29 @@ template<unsigned int state_size>
 bool BitBoard<state_size>::operator==(const BitBoard<state_size> &other) const {
     for (int i=0;i < state_size;++i) if (state[i]^other.state[i]) return false;
     return true;
+}
+
+template<>
+uint64 BitBoard<4u>::getHash() const {
+    uint64 s0 = state[0];
+    uint64 s1 = state[1];
+    uint64 s2 = state[2];
+    uint64 s3 = state[3];
+
+    uint64 ml = s3 ^ s2 ^ s1 ^ s0;
+
+    uint64 mh = s0;
+    mh ^= rotateLeft<uint64, 1*SQR_POP>(s1);
+    mh ^= rotateLeft<uint64, 2*SQR_POP>(s2);
+    mh ^= rotateLeft<uint64, 3*SQR_POP>(s3);
+
+    mh ^= mh << SQR_POP;
+    ml ^= ml >> SQR_POP;
+
+    // mh &= 0xC;
+    // ml &= 0x3;
+    ml &= uint64c(0xFFFFFFFF); //ml = (uint32_t) ml;
+    return mh ^ ml;
 }
 
 template<unsigned int state_size>

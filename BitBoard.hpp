@@ -103,28 +103,32 @@ public:
      * Masks out column 0 if direction is horizontal, 
      * row 0 if direction is vertical
      */
-    static const uint64 l0  =(d==h)?0xEEEEEEEEEEEEEEEEull:0xFFF0FFF0FFF0FFF0ull;
+    static const uint64 l0  =(d==h)?
+                    uint64c(0xEEEEEEEEEEEEEEEE) : uint64c(0xFFF0FFF0FFF0FFF0);
     /**
      * @brief Masks masking out lines 0, 1 in current direction
      *
      * Masks out columns 0 and 1 if direction is horizontal, 
      * row 0 and 1 if direction is vertical
      */
-    static const uint64 l01 =(d==h)?0xCCCCCCCCCCCCCCCCull:0xFF00FF00FF00FF00ull;
+    static const uint64 l01 = (d == h) ?
+                    uint64c(0xCCCCCCCCCCCCCCCC) : uint64c(0xFF00FF00FF00FF00);
     /**
      * @brief Masks masking out line 3 in current direction
      *
      * Masks out column 3 if direction is horizontal, 
      * row 3 if direction is vertical
      */
-    static const uint64 l3  =(d==h)?0x7777777777777777ull:0x0FFF0FFF0FFF0FFFull;
+    static const uint64 l3  = (d == h) ?
+                    uint64c(0x7777777777777777) : uint64c(0x0FFF0FFF0FFF0FFF);
     /**
      * @brief Masks masking out lines 2, 3 in current direction
      *
      * Masks out columns 2 and 3 if direction is horizontal, 
      * row 2 and 3 if direction is vertical
      */
-    static const uint64 l23 =(d==h)?0x3333333333333333ull:0x00FF00FF00FF00FFull;
+    static const uint64 l23 = (d == h) ?
+                    uint64c(0x3333333333333333) : uint64c(0x00FF00FF00FF00FF);
 };
 
 /**
@@ -256,7 +260,7 @@ typedef unsigned int tile_value;
 /**
  * @brief one full board
  */
-#define FBOARD uint64(0xFFFF)
+#define FBOARD uint64c(0xFFFF)
 
 /**
  * @brief board's height (and width) size
@@ -512,6 +516,9 @@ private:
     template<d4  d> void compress();
 
 public:
+
+    uint64 getHash() const;
+    
     static ptile mask2xy(uint64 x);
 
     void makePlace(unsigned int y, unsigned int x, bool is2);

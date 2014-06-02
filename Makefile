@@ -20,7 +20,7 @@ server:$(OBJ_ALL) $(OBJ_SER)
 	$(CXX) $(CXXFLAGS) -o server $(OBJ_ALL) $(OBJ_SER) $(LDFLAGS)
 
 client:$(OBJ_ALL) $(OBJ_CLN)
-	$(CXX) -g $(CXXFLAGS) -o client $(OBJ_ALL) $(OBJ_CLN) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o client $(OBJ_ALL) $(OBJ_CLN) $(LDFLAGS)
 
 depend:
 	makedepend $(CFLAGS) $(SRC_SER) $(SRC_CLN) $(SRC_ALL)

@@ -9,13 +9,19 @@
 #include <iomanip>
 #include <iostream>
 #include <cassert>
+#include <cstdint>
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 using namespace std;
 
 /**
  * @brief 64bit unsigned int
  */
-typedef unsigned long long int uint64;
+typedef uint64_t uint64;
+#define uint64c(x) UINT64_C(x)
 
 /**
  * @brief Prints lower board of @p x, mirrored 
@@ -45,7 +51,7 @@ void printLBoard(uint64 x, ostream& out=cout, string del=" ", string pre="");
  * @param[in]       del     string to print after row
  * @param[in]       pre     string to print before row
  */
-void printLow(uint64 x, ostream& out=cout, string del=" ", string pre="");
+void printLRow(uint64 x, ostream& out=cout, string del=" ", string pre="");
 
 /**
  * @brief Computes index of bit on 64bit integer
@@ -58,7 +64,36 @@ void printLow(uint64 x, ostream& out=cout, string del=" ", string pre="");
  * 
  * @return                  index of bit in @p bb
  */
-unsigned long int square(uint64 bb);
+constexpr unsigned long int square(uint64 bb){
+#ifdef _MSC_VER
+    unsigned long int index;
+    _BitScanForward64(&index, bb);
+    return index;
+#else
+    return __builtin_ctzll(bb);
+#endif
+}
 
 uint64 pop_lsb(uint64 &x);
+
+
+template <typename T>
+constexpr T rotateLeft(T x, unsigned int shftamnt){
+    return (x << shftamnt) | (x >> ((sizeof(T) << 3) - shftamnt));
+}
+
+template <typename T, unsigned int shftamnt>
+constexpr T rotateLeft(T x){
+    return (x << shftamnt) | (x >> ((sizeof(T) << 3) - shftamnt));
+}
+
+template <typename T>
+constexpr T rotateRight(T x, unsigned int shftamnt){
+    return (x >> shftamnt) | (x << ((sizeof(T) << 3) - shftamnt));
+}
+
+template <typename T, unsigned int shftamnt>
+constexpr T rotateRight(T x){
+    return (x >> shftamnt) | (x << ((sizeof(T) << 3) - shftamnt));
+}
 #endif /* _BITUTILS_HPP */
