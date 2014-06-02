@@ -1,10 +1,6 @@
 #include "Client-comm.hpp"
 
 
-/* To be used for time measurements - do not change */
-static clock_t end_of_time; 
-static clock_t move_start; 
-
 void GetHost(int argc, char * argv[], char *host)
 {
 	if (argc < 4) 
@@ -76,13 +72,6 @@ void GetMessageFromServer (int sock, MsgFromServer *msg)
     if (nbytes < sizeof(MsgFromServer)) {
         exit (EXIT_FAILURE);
     }
-
-
-    move_start = clock();
-    end_of_time = move_start + (clock_t)(msg->time_left * CLOCKS_PER_SEC);
-    if (end_of_time < move_start) {
-       std::cerr << "clock() may wrap around during this game" << std::endl;
-    }
 }
 
 
@@ -106,13 +95,6 @@ void SendFirstMessage (int sock, int side)
 
 void StartSession (int *sock, int side, int server_port, char *server_host)
 {
-    int ret;
-    ret = clock();  /* Start CPU clock counter. */
-    if (ret == (clock_t) -1) {
-        std::cerr << "clock() failed" << std::endl;
-        exit (EXIT_FAILURE);
-    }
-
     *sock = InitClientComm(server_port, server_host);
     SendFirstMessage (*sock, side);
 }

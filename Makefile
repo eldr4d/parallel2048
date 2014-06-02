@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -g3
+CXXFLAGS = -std=c++11 -g3 -pthread
 
 LDFLAGS =  -lnsl 
 
@@ -8,8 +8,8 @@ SRC_ALL = BitBoard.cpp BitUtils.cpp
 OBJ_SER = Communication/Comm.o Server.o 
 SRC_SER = Communication/Comm.hpp Server.cpp 
 
-OBJ_CLN = Communication/Client-comm.o Client.o 
-SRC_CLN = Communication/Client-comm.cpp Client.cpp 
+OBJ_CLN = Communication/Client-comm.o Client.o
+SRC_CLN = Communication/Client-comm.cpp Client.cpp ThreadPool.hpp
 
 all:client server
 

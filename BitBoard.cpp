@@ -41,13 +41,21 @@ uint64 d4c<d>::right_shift2(uint64 x){
 
 template<unsigned int state_size>
 BitBoard<state_size>::BitBoard(){
-    initialize(2, 2, true, 3, 2, true);
+    clear();//initialize(2, 2, true, 3, 2, true);
 }
 
 template<unsigned int state_size>
 BitBoard<state_size>::BitBoard(unsigned int ya, unsigned int xa, bool a_is_2,
                     unsigned int yb, unsigned int xb, bool b_is_2){
     initialize(ya, xa, a_is_2, yb, xb, b_is_2);
+}
+
+template<unsigned int state_size>
+void BitBoard<state_size>::clear(){
+    for(unsigned int i=0; i<state_size; i++){
+        state[i] = 0;
+    }
+    score = 0;
 }
 
 template<unsigned int state_size>
