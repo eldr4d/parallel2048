@@ -1,13 +1,15 @@
+#include "TranspositionTable.hpp"
 #include "Communication/Client-comm.hpp"
 #include "BitBoard.hpp"
 #include <chrono>
 #include <ctime>
 #include "ThreadPool/ThreadPool.hpp"
-
 //#define NDEBUG
 #define NUM_OF_THREADS 5
 
 using namespace std;
+
+TranspositionTable tt;
 
 typedef BitBoard<4u> BitBoard_t;
 BitBoard_t board;
@@ -183,6 +185,20 @@ int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_
         return temp;
     }
 
+    uint64 hash = board.getHash();
+    int killerMove = -1;
+    if (move == NULL){
+        killerMove = tt.retrieveTTEntry(hash, depth, alpha, beta, pl == PLACER);
+        //if (ttResult == ttExactScoreReturned) return alpha;
+        if (alpha >= beta) {
+            // statistics(++hashHitCutOff);
+            return alpha;
+        }
+    }
+    int bmove = -1;
+    unsigned int bis2 = 0;
+
+
 #ifndef NDEBUG
 	board.assert_state();
 #endif
@@ -190,30 +206,25 @@ int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_
     int32_t best = -numeric_limits<int32_t>::max();
     bool firstChild = true;
 
-    --depth;                                            //decrease depth
-
     if(pl == PLACER){
         uint64 empty = board.getEmptyTiles();
         while (empty){
             uint64 p = pop_lsb(empty);
             for (unsigned int is2 = 0; is2 < 2 ; ++is2){ // 2 or 4
                 board.makePlace(p, is2);
-                int32_t score = search_deeper(board, other, depth, alph, bet, firstChild);
+                int32_t score = search_deeper(board, other, depth - 1, alph, bet, firstChild);
                 board.undoPlace(p, is2);
 
                 if (score >= bet){
+                    assert(move == NULL);
+                    tt.addTTEntry(hash, depth, square(p), score, pl == PLACER, Cut_Node);
                     return bet;                         //fail-hard beta cut-off
                 }
                 firstChild = false;
                 if (score > alph){
                     alph = score;
-                    if(move){
-                        ptile pt = BitBoard_t::mask2xy(p);
-                        move->dir = -1;
-                        move->row = pt.row;
-                        move->col = pt.col;
-                        move->v = is2;
-                    }
+                    bmove = square(p);
+                    bis2 = is2;
                 }
             }
         }
@@ -225,26 +236,44 @@ int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_
 	    		continue;
 	    	}
             noMove = false;
-            int32_t score = search_deeper(board2, other, depth, alph, bet, firstChild);
+            int32_t score = search_deeper(board2, other, depth - 1, alph, bet, firstChild);
 
             if (score >= bet){
+                assert(move == NULL);
+                tt.addTTEntry(hash, depth, 1 << d, score, pl == PLACER, Cut_Node);
                 return bet;                             //fail-hard beta cut-off
             }
             firstChild = false;
             if (score > alph){
                 alph = score;
-                if(move){
-                    move->dir = d;
-                    move->row = -1;
-                }
+                bmove = 1 << d;
             }
     	}
         if (noMove){
             int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
             temp = (pl == NORMAL) ? temp : -temp;
+            assert(move == NULL);
             return temp;
         }
     }
+    if(move){
+        if (pl == PLACER){
+            ptile pt = BitBoard_t::mask2xy(1 << bmove);
+            move->dir = -1;
+            move->row = pt.row;
+            move->col = pt.col;
+            move->v = bis2;
+        } else {
+            move->dir = square(bmove);
+            move->row = -1;
+        }
+    }
+    NodeType nt = PV__Node;
+    if (bmove < 0){ //All-Node
+        nt    = All_Node;
+        bmove = 0;
+    }
+    tt.addTTEntry(hash, depth, bmove, alph, pl == PLACER, nt);
     return alph;
 }
 
@@ -268,7 +297,6 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
     std::chrono::duration<double> elapsed_seconds;
 	double totalSeconds = 0.2;
     do{
-    	cout << depth << endl;
 		start = std::chrono::system_clock::now();
 		int32_t bestcost = -99999;
 
@@ -279,7 +307,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //myThreadPool.useNewThread(args);
             //while(bestcost == -99999)
             //    usleep(10);
-			bestcost = negaScout(board, move, NORMAL, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+			bestcost = negaScout(board, move, NORMAL, depth, 0, numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}else{
             // args.pl = PLACER;
@@ -288,7 +316,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             // while(bestcost == -99999)
             //     usleep(10);
             // bestcost = -bestcost;
-			bestcost = -negaScout(board, move, PLACER, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+			bestcost = -negaScout(board, move, PLACER, depth, -(numeric_limits<int32_t>::max()-100000), 0);
 	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}
 		end = std::chrono::system_clock::now();

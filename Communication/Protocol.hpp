@@ -10,11 +10,11 @@ enum Status {
     ABORT,
 };
 
-enum Directions {
+enum Directions { //DO NOT CHANGE VALUES!!!
     LEFT = 0,
-    DOWN,
-    RIGHT,
-    UP,
+    DOWN = 1,
+    RIGHT = 2,
+    UP = 3,
     DIR_SIZE,
 };
 
