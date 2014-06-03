@@ -5,7 +5,7 @@
 #include <ctime>
 #include "ThreadPool/ThreadPool.hpp"
 //#define NDEBUG
-#define NUM_OF_THREADS 5
+#define NUM_OF_THREADS 4
 
 using namespace std;
 
@@ -21,9 +21,7 @@ typedef struct{
 
 typedef struct{
     player pl;
-    bool color;
     int32_t alpha, beta, depth;
-    bool root;
     BitBoard_t board;
     Move *move;
     int32_t *writeResult;
@@ -88,26 +86,20 @@ void GetUserMove (int *dir)
 }
 
 int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
-    int32_t score = 0;
-	if(boardForEv.existsPlacerMove()){
-		int32_t v1;
-        bool inCorner = false;
-		int32_t v2 = boardForEv.getHigherTile(inCorner);
-        score = (1 << v2) + 1;
-		if(inCorner){
-			score <<= 1;
-		}
-		return score;
-	}else{
-		//int32_t v2 = boardForEv.getHigherTile(); 
-		return 0;
-		//return (double)boardForEv.score/100.0; //We do not want to prefer the end of game compared to any other move
+    bool inCorner = false;
+	int32_t v2 = boardForEv.getHigherTile(&inCorner);
+    int32_t score = (v2 << 6) + 1;
+	if(inCorner){
+		score <<= 2;
 	}
-    return score;
+    int tmp = boardForEv.countFreeTiles() - 7;
+    score += (tmp < 0) ? -tmp : tmp;
+    assert(score >= -5);
+	return score;
 }         
 
 
-int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl, int32_t depth, bool color, int32_t alpha, int32_t beta){
+int32_t negaMaxExpandOneChild(BitBoard_t board, Move *move, player pl, int32_t depth, int32_t alpha, int32_t beta){
      player other = getOtherPlayer(pl);
 
     int32_t alph = alpha, bet = beta;
@@ -116,7 +108,7 @@ int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl
     if(pl == PLACER){
        ;
     }else{
-        best.resize(4);
+        best.reserve(4);
         for(unsigned int d=LEFT; d<DIR_SIZE; d++){
             BitBoard_t board2 = board;
             if(!board2.tryMove(d)){
@@ -129,12 +121,9 @@ int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl
             args.beta = -alph;
             args.pl = other;
             args.depth = depth-1;
-            args.root = false;
             args.board = board2;
             args.move = move;
             args.writeResult = &(best.back());
-            args.pl = NORMAL;
-            args.color = true;
             myThreadPool.useNewThread(args);
         }
 
@@ -142,11 +131,12 @@ int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl
         int32_t bestMove;
         for(unsigned int i=0; i<best.size(); i++){
             while(best[i] == -99999){
-                usleep(10);
+                // usleep(10);
                 //cout << "Koimame pali " << best.size() << " " << best[i]  << endl;
             }
             best[i] = -best[i];
             if(best[i] > bestCost){
+                assert(moves[i] < 4);
                 bestMove = moves[i];
                 bestCost = best[i];
             }
@@ -161,8 +151,6 @@ int32_t negaMaxExpandOneChild(BitBoard_t board, bool root, Move *move, player pl
 int32_t search_deeper(BitBoard_t board, player other, int32_t depth, int32_t alpha, int32_t beta, bool &firstChild){
     int32_t score;
     if(firstChild == true){
-        // if (other == PLACER) firstChild = false;
-        firstChild = firstChild && (other != PLACER);
         score = -negaScout(board, NULL, other, depth, -beta, -alpha);
     } else {
         score = -negaScout(board, NULL, other, depth, -alpha-1, -alpha);
@@ -250,10 +238,8 @@ int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_
             }
     	}
         if (noMove){
-            int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
-            temp = (pl == NORMAL) ? temp : -temp;
-            assert(move == NULL);
-            return temp;
+            bool a;
+            return board.getHigherTile(&a) << 2;
         }
     }
     if(move){
@@ -280,13 +266,12 @@ int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
 
-    int32_t depth = 9;
+    int32_t depth = 7;
 
     maskedArguments args;
     args.alpha = -(numeric_limits<int32_t>::max()-100000);
     args.beta = (numeric_limits<int32_t>::max()-100000);
     args.depth = depth;
-    args.root = true;
     args.board = board;
     args.move = move;
 
@@ -307,7 +292,8 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //myThreadPool.useNewThread(args);
             //while(bestcost == -99999)
             //    usleep(10);
-			bestcost = negaScout(board, move, NORMAL, depth, 0, numeric_limits<int32_t>::max()-100000);
+            move->dir = 1000;
+			bestcost = negaMaxExpandOneChild(board, move, NORMAL, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 	   	 	cout << "Best dir = " << move->dir << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}else{
             // args.pl = PLACER;
@@ -316,7 +302,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             // while(bestcost == -99999)
             //     usleep(10);
             // bestcost = -bestcost;
-			bestcost = -negaScout(board, move, PLACER, depth, -(numeric_limits<int32_t>::max()-100000), 0);
+			bestcost = -negaScout(board, move, PLACER, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000));
 	   	 	cout << "Best row = " << move->row << ",col = " << move->col << " ,value = " << move->v << " and best cost = " << bestcost <<  " @depth " << depth << endl;
 		}
 		end = std::chrono::system_clock::now();
@@ -324,7 +310,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 		totalSeconds -= elapsed_seconds.count();
 		depth++;
 		
-    }while(totalSeconds>0);
+    }while(totalSeconds>0 && depth < 60);
 
 
     return 0;

@@ -89,7 +89,7 @@ bool BitBoard<state_size>::tileExist(tile_value tile){
 }
 
 template<unsigned int state_size>
-tile_value BitBoard<state_size>::getHigherTile(bool &inCorner){
+tile_value BitBoard<state_size>::getHigherTile(bool *inCorner){
 	for (int i = state_size-1 ; i >= 0 ; --i){
 		uint64 t = state[i];
 		if (t){
@@ -100,7 +100,7 @@ tile_value BitBoard<state_size>::getHigherTile(bool &inCorner){
 			for (int j = 1; j < 4 ; ++j, t >>= SQR_POP){
 			    if (t & FBOARD){
 			    	v = j;
-                    inCorner = t & CORNERS;
+                    *inCorner = t & CORNERS;
 			    }
 			}
 			return v + (i << 2);

@@ -77,7 +77,7 @@ public:
 				dataForFunc = resourcesForEachThread.front();
 				resourcesForEachThread.pop();
 			}
-			std::cout << "new job arrived to: " << std::this_thread::get_id() << std::endl;
+			// std::cout << "new job arrived to: " << std::this_thread::get_id() << std::endl;
 			f(dataForFunc);
 		}
 	}

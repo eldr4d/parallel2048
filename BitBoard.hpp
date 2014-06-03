@@ -551,7 +551,7 @@ public:
    	 *
      * @return              logarithm (base 2) of value of the largest tile
      */
-    tile_value getHigherTile(bool &inCorner);
+    tile_value getHigherTile(bool *inCorner);
     
     /**
      * @brief Gets value (log) of tile on coordinates (@p y, @p x)
