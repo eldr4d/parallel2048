@@ -7,7 +7,6 @@
 using namespace std;
 
 int SendEndMessage (int sock1, Status status);
-typedef BitBoard<4u> BitBoard_t;
 BitBoard_t board;
 
 int ReadFromClient (int filedes)
@@ -361,7 +360,7 @@ int main (int argc, char *argv[])
             cout << totalNumberOfInitFours << endl;
 			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
-			
+            
 			//Placer player
             out_msg.status = GIVE_MOVE;
 			out_msg.time_left = time_left[PLACER];

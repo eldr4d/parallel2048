@@ -171,6 +171,21 @@ ptile BitBoard<state_size>::mask2xy(uint64 x){
 }
 
 template<unsigned int state_size>
+bool BitBoard<state_size>::intToMove(Move *m, int bmove, player pl){
+    assert(m);
+    if (pl == player::PLACER){
+        ptile pt = mask2xy(1 << (bmove & 0xF));
+        m->dir = -1;
+        m->row = pt.row;
+        m->col = pt.col;
+        m->v = !(bmove & 0x10);
+    } else {
+        m->dir = bmove;
+        m->row = -1;
+    }
+}
+
+template<unsigned int state_size>
 unsigned int BitBoard<state_size>::xy2ind(unsigned int y, unsigned int x){
     assert(valid_xy(y, x));
     return (x + (y*BOARD_SIZE));
@@ -376,32 +391,44 @@ bool BitBoard<state_size>::tryMove(){
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::tryMove(unsigned int d){
-    switch(d & 3){
-        case  0: return tryMove<d4::left> ();
-        case  1: return tryMove<d4::down> ();
-        case  2: return tryMove<d4::right>();
-        default: return tryMove<d4::up>   ();
+bool BitBoard<state_size>::tryMove(uint64 d){
+    assert( d == bitNormalMove::b_left  || 
+            d == bitNormalMove::b_right ||
+            d == bitNormalMove::b_down  ||
+            d == bitNormalMove::b_up);
+    switch((bitNormalMove) d){
+        case  bitNormalMove::b_left : return tryMove<d4::left> ();
+        case  bitNormalMove::b_down : return tryMove<d4::down> ();
+        case  bitNormalMove::b_right: return tryMove<d4::right>();
+        default                     : return tryMove<d4::up>   ();
     }
 }
 
 template<unsigned int state_size>
-void BitBoard<state_size>::move(unsigned int d){
-    switch(d & 3){
-        case  0: move<d4::left> (); break;
-        case  1: move<d4::down> (); break;
-        case  2: move<d4::right>(); break;
-        default: move<d4::up>   (); break;
+void BitBoard<state_size>::move(uint64 d){
+    assert( d == bitNormalMove::b_left  || 
+            d == bitNormalMove::b_right ||
+            d == bitNormalMove::b_down  ||
+            d == bitNormalMove::b_up);
+    switch((bitNormalMove) d){
+        case  bitNormalMove::b_left : return move<d4::left> ();
+        case  bitNormalMove::b_down : return move<d4::down> ();
+        case  bitNormalMove::b_right: return move<d4::right>();
+        default                     : return move<d4::up>   ();
     }
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::existsMove(unsigned int d) const{
-    switch(d & 3){
-        case  0: return existsNMove<d4::left> ();
-        case  1: return existsNMove<d4::down> ();
-        case  2: return existsNMove<d4::right>();
-        default: return existsNMove<d4::up>   ();
+bool BitBoard<state_size>::existsMove(uint64 d) const{
+    assert( d == bitNormalMove::b_left  || 
+        d == bitNormalMove::b_right ||
+        d == bitNormalMove::b_down  ||
+        d == bitNormalMove::b_up);
+    switch((bitNormalMove) d){
+        case  bitNormalMove::b_left : return existsNMove<d4::left> ();
+        case  bitNormalMove::b_down : return existsNMove<d4::down> ();
+        case  bitNormalMove::b_right: return existsNMove<d4::right>();
+        default                     : return existsNMove<d4::up>   ();
     }
 }
 
@@ -448,6 +475,16 @@ void BitBoard<state_size>::makePlace(uint64 m, bool is2){
 }
 
 template<unsigned int state_size>
+void BitBoard<state_size>::makePlace(uint64 m){
+    assert(!(m & ~(FBOARD | (FBOARD << SQR_POP))));
+    assert(m);
+    assert(!(m & (m - 1)));
+    assert(!(state[0] & (m | (m >> SQR_POP))));
+    uint64 t  = (m | (m >> SQR_POP)) & FBOARD;
+    state[0] |= t | (m << SQR_POP);
+}
+
+template<unsigned int state_size>
 void BitBoard<state_size>::undoPlace(unsigned int y, unsigned int x, bool is2){
     undoPlace(xy2mask(y, x), is2);
 }
@@ -461,6 +498,18 @@ void BitBoard<state_size>::undoPlace(uint64 m, bool is2){
     assert(t & m);
     assert(t & (m << ( SQR_POP << (is2 ? 0 : 1))));
     state[0] = t & ~(m | (m << ( SQR_POP << (is2 ? 0 : 1))));
+}
+
+template<unsigned int state_size>
+void BitBoard<state_size>::undoPlace(uint64 m){
+    assert(!(m & ~(FBOARD | (FBOARD << SQR_POP))));
+    assert(m);
+    assert(!(m & (m - 1)));
+    uint64 t = state[0];
+    assert(t & (m | (m >> SQR_POP)) & FBOARD);
+    assert(t & (m << SQR_POP));
+    uint64 p = m | (m >> SQR_POP) | (m << SQR_POP);
+    state[0] = t & ~p;
 }
 
 template<unsigned int state_size>

@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cmath>
 #include "BitUtils.hpp"
+#include "Definitions.hpp"
 
 using namespace std;
 
@@ -73,6 +74,15 @@ enum d4{
      * @brief Down
      */
     down  = -4
+};
+
+#define allBitNormalMove (0xF)
+
+enum bitNormalMove{
+    b_left  = 1,
+    b_up    = 2,
+    b_right = 4,
+    b_down  = 8
 };
 
 /**
@@ -530,11 +540,14 @@ public:
     uint64 getHash() const;
     
     static ptile mask2xy(uint64 x);
+    static bool intToMove(Move *m, int killer, player pl);
 
     void makePlace(unsigned int y, unsigned int x, bool is2);
     void makePlace(uint64 m, bool is2);
+    void makePlace(uint64 m);
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
+    void undoPlace(uint64 m);
 
     /**
      * @brief Returns true if board contains the given tile
@@ -644,13 +657,13 @@ public:
      * otherwise move is done.
      *
      * Direction based on lower bits of @p d, will be:
-     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     * 1 -> left, 2 -> down, 4 -> right, 8 -> up
      *
      * @param[in]           bitset specifying direction
      *
      * @return              true if move is legal, false otherwise
      */
-    bool tryMove(unsigned int d);
+    bool tryMove(uint64 d);
     /**
      * @brief Checks if a sliding move on a specific direction is legal
      *
@@ -658,13 +671,13 @@ public:
      * on specified direction is legal.
      *
      * Direction based on lower bits of @p d, will be:
-     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     * 1 -> left, 2 -> down, 4 -> right, 8 -> up
      *
      * @param[in]           bitset specifying direction
      *
      * @return              true if move is legal, false otherwise
      */
-    bool existsMove(unsigned int d) const;
+    bool existsMove(uint64 d) const;
     /**
      * @brief Checks if a sliding move is legal in any direction
      *
@@ -680,13 +693,13 @@ public:
      * on specified direction.
      *
      * Direction based on lower bits of @p d, will be:
-     * 0 -> left, 1 -> down, 2 -> right, 3 -> up
+     * 1 -> left, 2 -> down, 4 -> right, 8 -> up
      * 
      * @pre                 sliding/merging move in direction @p d is legal
      * 
      * @param[in]           bitset specifying direction
      */
-    void move(unsigned int d);
+    void move(uint64 d);
 
     /**
      * @brief Randomly places a tile

@@ -1,14 +1,14 @@
 #ifndef _COMM_H
 #define _COMM_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include <errno.h>
+#include <cerrno>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string.h>

@@ -1,15 +1,15 @@
-CXXFLAGS = -std=c++11 -g3 -pthread
+CXXFLAGS = -std=c++11 -g3 -pthread 
 
 LDFLAGS =  -lnsl 
 
-OBJ_ALL = BitBoard.o BitUtils.o
-SRC_ALL = BitBoard.cpp BitUtils.cpp
+OBJ_ALL = BitBoard.o BitUtils.o Utils.o
+SRC_ALL = BitBoard.cpp BitUtils.cpp Utils.cpp
 
 OBJ_SER = Communication/Comm.o Server.o 
 SRC_SER = Communication/Comm.hpp Server.cpp 
 
-OBJ_CLN = Communication/Client-comm.o Client.o
-SRC_CLN = Communication/Client-comm.cpp Client.cpp ThreadPool.hpp TranspositionTable.hpp
+OBJ_CLN = Communication/Client-comm.o Client.o Search.o
+SRC_CLN = Communication/Client-comm.cpp Client.cpp Search.cpp
 
 all:client server
 
@@ -71,7 +71,19 @@ Client.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
 Client.o: /usr/include/rpc/netdb.h /usr/include/errno.h /usr/include/unistd.h
 Client.o: /usr/include/getopt.h /usr/include/arpa/inet.h
 Client.o: /usr/include/string.h Communication/Protocol.hpp BitBoard.hpp
-Client.o: BitBoard.hpp ThreadPool/ThreadPool.hpp
-TranspositionTable.o: BitUtils.hpp
+Client.o: BitBoard.hpp ThreadPool/ThreadPool.hpp MoveIterator.hpp
+Client.o: Communication/Protocol.hpp Search.hpp
+Search.o: Search.hpp Communication/Client-comm.hpp /usr/include/time.h
+Search.o: /usr/include/features.h /usr/include/stdc-predef.h
+Search.o: /usr/include/xlocale.h Communication/Comm.hpp /usr/include/stdio.h
+Search.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
+Search.o: /usr/include/stdlib.h /usr/include/alloca.h
+Search.o: /usr/include/netinet/in.h /usr/include/stdint.h
+Search.o: /usr/include/endian.h /usr/include/netdb.h /usr/include/rpc/netdb.h
+Search.o: /usr/include/errno.h /usr/include/unistd.h /usr/include/getopt.h
+Search.o: /usr/include/arpa/inet.h /usr/include/string.h
+Search.o: Communication/Protocol.hpp BitBoard.hpp BitUtils.hpp
+Search.o: TranspositionTable.hpp BitBoard.hpp MoveIterator.hpp
+Search.o: Communication/Protocol.hpp
 BitBoard.o: BitBoard.hpp
 BitUtils.o: BitUtils.hpp

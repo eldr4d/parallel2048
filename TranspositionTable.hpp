@@ -1,7 +1,10 @@
 #ifndef TRANSPOSITIONTABLE_H_
 #define TRANSPOSITIONTABLE_H_
+#include "Communication/Protocol.hpp"
 #include "BitUtils.hpp"
+#include <sstream>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -19,7 +22,7 @@ struct ttEntry{
 
 #define tte_bits_sstate (2)
 #define tte_bits_sdepth (6)
-#define tte_bits_killer (4)
+#define tte_bits_killer (5)
 #define tte_bits_sscore (tte_sz-tte_bits_killer-tte_bits_sstate-tte_bits_sdepth)
 
 #define tte_shft_sstate (0)
@@ -39,8 +42,8 @@ struct ttEntry{
 #define ss_mask         (3 << tte_shft_sstate)
 
 enum NodeType{
-    Cut_Node          = 0,                      //Beta Cut-Off
-    All_Node          = (1 << tte_shft_sstate), //No score > alpha
+    All_Node          = 0,                      //No score > alpha
+    Cut_Node          = (1 << tte_shft_sstate), //Beta Cut-Off
     PV__Node          = (2 << tte_shft_sstate)  //Exact Score
 };
 
@@ -83,6 +86,7 @@ public:
                 if (sc > alpha) alpha   = sc;
             } else if (bs == All_Node){ //entry contains an All-Node, beta...
                 if (sc < beta)  beta    = sc;
+                return NULL_MOVE;       //All-Nodes do not produce a killer move
             } else {                    //entry contains a Pv-Node, replace...
                 alpha   = sc;
                 beta    = sc;
@@ -141,6 +145,63 @@ public:
         if (sc & (1 << (tte_bits_sscore-1))) sc |= ~tte_mask_sscore;
         assert(sc == score);
         assert(move == ((ndata >> tte_shft_killer) & tte_mask_killer));
+    }
+
+    bool extractBest(BitBoard_t board, player pl, Move * m){
+        tthash hash = board.getHash();
+        int index = getTTIndex(hash);
+
+        const ttEntry * entr = mem + index;
+
+        tthash hashXD   = entr->hashXORdata;
+        ttdata data     = entr->data;
+
+        if ((hashXD ^ data) != hash) {
+            assert(false);
+            return false;
+        }
+
+        hdata nd = (pl == PLACER) ? (data) : (data >> tte_sz);
+        int km = (nd >> tte_shft_killer) & tte_mask_killer;
+
+        BitBoard_t::intToMove(m, km, pl);
+        return true;
+    }
+
+    string extractPV(BitBoard_t board, player pl){
+        stringstream pv;
+        Move m;
+        while (1){
+            tthash hash = board.getHash();
+            int index = getTTIndex(hash);
+
+            const ttEntry * entr = mem + index;
+
+            tthash hashXD   = entr->hashXORdata;
+            ttdata data     = entr->data;
+
+            if ((hashXD ^ data) != hash)                        return pv.str();
+
+            hdata nd = (pl == PLACER) ? (data) : (data >> tte_sz);
+
+            NodeType bs =(NodeType) ((nd >> tte_shft_sstate) & tte_mask_sstate);
+
+            if (bs == All_Node)                                 return pv.str();
+
+            int km = (nd >> tte_shft_killer) & tte_mask_killer;
+
+            //board's hash is unique per board!!! no collisions...
+            //so killer move must be valid 
+            if (pl == PLACER){
+                board.makePlace(1 << km);
+            } else {
+                board.move(km);
+            }
+
+            BitBoard_t::intToMove(&m, km, pl);
+            pv << hex << setw(2) << m << " ";
+            pl = getOtherPlayer(pl);
+        }
     }
 };
 

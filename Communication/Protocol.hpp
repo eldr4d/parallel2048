@@ -1,7 +1,9 @@
 #ifndef _PROTOCOL_H
 #define _PROTOCOL_H
 
+#include "../Definitions.hpp"
 #include "../BitBoard.hpp"
+#include <iostream>
 
 /* Messages flowing between the server and the clients */
 enum Status {
@@ -10,18 +12,15 @@ enum Status {
     ABORT,
 };
 
-enum Directions { //DO NOT CHANGE VALUES!!!
-    LEFT = 0,
-    DOWN = 1,
-    RIGHT = 2,
-    UP = 3,
-    DIR_SIZE,
-};
+// enum Directions { //DO NOT CHANGE VALUES!!!
+//     LEFT = 0,
+//     DOWN = 1,
+//     RIGHT = 2,
+//     UP = 3,
+//     DIR_SIZE,
+// };
 
-enum player{
-	NORMAL=0,
-	PLACER,
-};
+typedef BitBoard<4u> BitBoard_t;
 
 typedef struct {
     Status          status;
@@ -30,7 +29,7 @@ typedef struct {
     bool            two; /* Opponent's last move (if placer)*/
     int 			dir; /* Opponent's last move (if normal player); 0 up 1 right 2 down 3 left */
 	player			pl;
-    BitBoard<4u>    board;
+    BitBoard_t      board;
 } MsgFromServer;
 
 
@@ -43,6 +42,8 @@ typedef struct {
 } MsgToServer;
 
 typedef char FirstMsgToServer;  /* 0-Normal, 1-Placer */
+
+ostream& operator<<(ostream& os, const Move& obj);
 #endif //_PROTOCOL_H
 
 
