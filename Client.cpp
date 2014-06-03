@@ -185,6 +185,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 		int32_t bestcost = -99999;
 
         args.writeResult = &bestcost;
+        tt.preparePVposition(board);
 		if(pl == NORMAL){
             //args.pl = NORMAL;
             //args.color = true;

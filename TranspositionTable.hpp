@@ -147,6 +147,21 @@ public:
         assert(move == ((ndata >> tte_shft_killer) & tte_mask_killer));
     }
 
+    void preparePVposition(BitBoard_t board){
+        tthash hash = board.getHash();
+        int index = getTTIndex(hash);
+
+        ttEntry * entr = mem + index;
+
+        tthash hashXD   = entr->hashXORdata;
+        ttdata data     = entr->data;
+
+        if ((hashXD ^ data) == hash) return;
+
+        entr->hashXORdata = 0;
+        entr->data = 0;
+    }
+
     bool extractBest(BitBoard_t board, player pl, Move * m){
         tthash hash = board.getHash();
         int index = getTTIndex(hash);
