@@ -7,12 +7,14 @@
 #include "MoveIterator.hpp"
 #include "Search.hpp"
 //#define NDEBUG
-#define NUM_OF_THREADS 4
 
 using namespace std;
 
 TranspositionTable tt;
 BitBoard_t board;
+
+uint64_t horizonNodes;
+uint64_t totalNodes;
 
 typedef struct{
     player pl;
@@ -171,7 +173,9 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
     args.depth = depth;
     args.board = board;
     args.move = move;
-
+    
+    horizonNodes = 0;
+    totalNodes   = 0;
 
 
     std::chrono::time_point<std::chrono::system_clock> start, end;
@@ -212,9 +216,10 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         cout << " time "  << chrono::duration_cast<chrono::milliseconds>(
                                     chrono::system_clock::now() - glob_start
                                 ).count();
-        cout << " pv "    << tt.extractPV(board, pl);
+        cout << " nodes " << totalNodes;
+        cout << " pv "    << tt.extractPV(board, pl, 120);
         cout << endl;
-        //end of indo message
+        //end of info message
 
         end = std::chrono::system_clock::now();
         elapsed_seconds= end-start;
@@ -236,7 +241,6 @@ int main (int argc, char *argv[])
     char            host[100];
 
     srand(time(NULL) % (1 << 24));
-
 
     if(argc < 2) {
 		cout << "Usage: " << argv[0] << " <normal|placer> [server-port] [server-host] [nodelimit]" << endl;
@@ -260,6 +264,7 @@ int main (int argc, char *argv[])
 		board = msg.board;
 	    cout << "Starting board = " << endl << board << endl;
         while (msg.status != GAME_ENDED && msg.status != ABORT) {
+
 			if(side == PLACER){
 				ptile c = board.placeRandom();
                	cout << board << endl;

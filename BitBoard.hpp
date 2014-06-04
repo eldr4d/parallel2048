@@ -545,6 +545,7 @@ public:
     void makePlace(unsigned int y, unsigned int x, bool is2);
     void makePlace(uint64 m, bool is2);
     void makePlace(uint64 m);
+    bool tryPlace(uint64 m);
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
     void undoPlace(uint64 m);

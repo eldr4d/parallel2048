@@ -461,6 +461,19 @@ bool BitBoard<state_size>::tryPlace(uint64 m, bool is2){
 }
 
 template<unsigned int state_size>
+bool BitBoard<state_size>::tryPlace(uint64 m){
+    assert(!(m & ~(FBOARD | (FBOARD << SQR_POP))));
+    assert(m);
+    assert(!(m & (m - 1)));
+    uint64 t = state[0];
+    uint64 p  = (m | (m >> SQR_POP)) & FBOARD;
+    if (p & t) return false;
+    state[0] = t | p | (m << SQR_POP);
+    return true;
+}
+
+
+template<unsigned int state_size>
 void BitBoard<state_size>::makePlace(unsigned int y, unsigned int x, bool is2){
     makePlace(xy2mask(y, x), is2);
 }

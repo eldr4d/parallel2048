@@ -20,6 +20,30 @@ class MoveIterator_t{
 public:
     MoveIterator_t(const T &board);
 
+    search_result searchKiller(T &board, int killer, int32_t depth, 
+                                int32_t alpha, int32_t beta, bool firstChild){
+        search_result ret;
+        ret.move = killer;
+        if (killer < 0) return ret;
+
+        uint64 p = killer;
+        if (pl == player::PLACER) p = uint64c(1) << p;
+
+        assert(moves & p);
+        moves ^= p; //killer must be one in moves!
+
+        if (pl == player::PLACER){ //if resolved by compiler based on template
+            board.makePlace(p);
+            ret.score = search_deeper<player::NORMAL>(board, depth, alpha, beta, firstChild);
+            board.undoPlace(p);
+        } else {
+            T bd2 = board;
+            bd2.move(p);
+            ret.score = search_deeper<player::PLACER>(bd2, depth, alpha, beta, firstChild);
+        }
+        return ret;
+    }
+
     search_result searchNextChild(T &board, int32_t depth, 
                                 int32_t alpha, int32_t beta, bool firstChild){
 
@@ -38,6 +62,8 @@ public:
             // square   : 0-15 board position tile was placed
             // 4        : 0-1  1 when a 4-tile was placed, 0 otherwise
             ret.move  = square(p);
+            assert((board.getEmptyTiles() | (board.getEmptyTiles() << SQR_POP)) & (uint64c(1) << ret.move));
+            assert(p == (uint64c(1) << ret.move));
 
             //move is always valid! play it and return score
             board.makePlace(p);

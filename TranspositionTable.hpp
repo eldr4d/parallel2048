@@ -61,6 +61,10 @@ public:
     TranspositionTable(){
         assert(sizeof(ttdata) == 8);
         assert(sizeof(hdata)  == 4);
+        for (int i = 0 ; i < TRANSPOSITION_TABLE_SIZE ; ++i){
+            mem[i].hashXORdata = 0;
+            mem[i].data        = 0;
+        }
     }
 
     inline int retrieveTTEntry(tthash hash, unsigned int depth, 
@@ -76,8 +80,11 @@ public:
 
         hdata ndata = (placer) ? (data) : (data >> tte_sz);
 
+        if (!ndata)                                         return NULL_MOVE;
+
+        NodeType bs = (NodeType) ((ndata >> tte_shft_sstate) & tte_mask_sstate);
+
         if (depth <= ((ndata >> tte_shft_sdepth) & tte_mask_sdepth)){
-            NodeType bs = (NodeType) ((ndata >> tte_shft_sstate) & tte_mask_sstate);
             int32_t  sc = (ndata >> tte_shft_sscore) & tte_mask_sscore;
             if (sc & (1 << (tte_bits_sscore-1))) sc |= ~tte_mask_sscore;
 
@@ -91,7 +98,10 @@ public:
                 alpha   = sc;
                 beta    = sc;
             }
+        } else if (bs == All_Node){
+            return NULL_MOVE;
         }
+        assert(placer || ((ndata >> tte_shft_killer) & tte_mask_killer));
         return (ndata >> tte_shft_killer) & tte_mask_killer;
     }
 
@@ -106,11 +116,13 @@ public:
         assert(sc == score);
         assert((depth & tte_mask_sdepth) == depth);
         assert((   ss & tte_mask_sstate) == ss);
+        assert(move || placer || (ss == All_Node));
 
         int index = getTTIndex(hash);
 
         ttEntry * entry = mem + index;
-        ttdata data = entry->data;
+        ttdata data   = entry->data;
+        tthash hashXD = entry->hashXORdata;
         
         //replace rule
         hdata old_data = (placer) ? (data) : (data >> tte_sz);
@@ -126,12 +138,15 @@ public:
         newData         |=  move << tte_shft_killer;
         newData         |= score << tte_shft_sscore;
 
+        ttdata nFData;
+        if ((hashXD ^ data) == hash){
+            nFData = newData ^ old_data;
 
-        ttdata nFData = newData ^ old_data;
-
-        nFData  = (placer) ? (nFData) : (nFData << tte_sz);
-        nFData ^= data;
-
+            nFData  = (placer) ? (nFData) : (nFData << tte_sz);
+            nFData ^= data;
+        } else {
+            nFData  = (placer) ? (newData) : (((ttdata) newData) << tte_sz);
+        }
         tthash newHXD = hash ^ nFData;
         
         entry->hashXORdata = newHXD;
@@ -183,10 +198,12 @@ public:
         return true;
     }
 
-    string extractPV(BitBoard_t board, player pl){
+    string extractPV(BitBoard_t board, player pl, int max_depth = -1){
         stringstream pv;
         Move m;
-        while (1){
+        int depth = 0;
+        BitBoard_t b2 = board;
+        while (depth++ != max_depth){
             tthash hash = board.getHash();
             int index = getTTIndex(hash);
 
@@ -207,16 +224,30 @@ public:
 
             //board's hash is unique per board!!! no collisions...
             //so killer move must be valid 
+#ifndef NDEBUG
+            bool test = (pl==PLACER) ? 
+                                board.tryPlace(uint64c(1) << km):
+                                board.tryMove(km);
+            assert(test);
+            if (!test) break;
+#else
             if (pl == PLACER){
-                board.makePlace(1 << km);
+                board.tryPlace(uint64c(1) << km);
             } else {
-                board.move(km);
+                board.tryMove(km);
             }
-
+#endif
             BitBoard_t::intToMove(&m, km, pl);
             pv << hex << setw(2) << m << " ";
             pl = getOtherPlayer(pl);
         }
+#ifndef NDEBUG
+        cout << b2 << endl;
+        cout << pv.str() << endl;
+        cout << board << endl;
+        assert(false);
+#endif
+        return pv.str();
     }
 };
 
