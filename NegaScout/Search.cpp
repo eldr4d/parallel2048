@@ -33,27 +33,37 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta)
 
     search_result sr;
     while(true) {
-        if (kiMove >= 0){
-            sr = mIt.searchKiller(board, kiMove, depth-1, alph, bet,firstChild);
-            kiMove = -1;
-        } else {
-            sr = mIt.searchNextChild(board, depth - 1, alph, bet, firstChild);
-        }
-        if (sr.move < 0) break;
+        sr = mIt.searchNextChild(board, kiMove, depth-1, alph, bet, firstChild);
+        kiMove = -1;
+        //sr.move == -1 signals that no more moves exists, no move was played
+        //if (sr.move == -1) break;                 //equivalent
+        if (sr.move < 0) break;                     //and rt.score is invalid
+        //sr.move is always non-negative if a valid move was played
+
+        firstChild = false; //set this here
+        //Setting firstChild here permits skipping the rest of current iteration
+        //if score must be ignored for now
+
+        //possible set a continue here such that if a new thread is used for
+        //subtree search, to skip score checking ? 
+        //if (sr.move < -1) continue;
+
         //move played!
         if (sr.score >= bet){
             tt.addTTEntry(hash, depth, sr.move, sr.score, pl==PLACER, Cut_Node);
             return bet;                         //fail-hard beta cut-off
         }
 
-        firstChild = false;
         if (sr.score > alph){                   //better move found
             alph  = sr.score;
             bmove = sr.move;
         }
     }
 
+    //Wait for threads to finish and merge scores here (?)
+
     if (firstChild){ //no move was available, this is a leaf node, return score
+        board.assert_state();
         assert(pl == NORMAL);
         ++horizonNodes;
         bool a;

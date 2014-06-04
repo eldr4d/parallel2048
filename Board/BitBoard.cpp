@@ -80,6 +80,18 @@ void BitBoard<state_size>::assert_state() const{
     for (int i = 1 ; i < state_size ; ++i) all |= state[i];
     all = moccu(all);
     assert(all == (state[0] & FBOARD));
+
+    all = 0;
+    for (int i = 0 ; i < state_size ; ++i) {
+        uint64 t = state[i];
+        if (i == 0) t &= ~FBOARD;
+        while (t){
+            assert(!(t & FBOARD & all));
+            all |= t & FBOARD;
+            t >>= SQR_POP;
+        }
+    }
+    assert(all == (state[0] & FBOARD));
 #endif
 }
 
