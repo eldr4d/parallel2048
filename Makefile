@@ -2,14 +2,14 @@ CXXFLAGS = -std=c++11 -g3 -pthread
 
 LDFLAGS =  -lnsl 
 
-OBJ_ALL = BitBoard.o BitUtils.o Utils.o
-SRC_ALL = BitBoard.cpp BitUtils.cpp Utils.cpp
+OBJ_ALL = Board/BitBoard.o Board/BitUtils.o Utils.o
+SRC_ALL = Board/BitBoard.cpp Board/BitUtils.cpp Utils.cpp
 
 OBJ_SER = Communication/Comm.o Server.o 
 SRC_SER = Communication/Comm.hpp Server.cpp 
 
-OBJ_CLN = Communication/Client-comm.o Client.o Search.o
-SRC_CLN = Communication/Client-comm.cpp Client.cpp Search.cpp
+OBJ_CLN = Communication/Client-comm.o Client.o NegaScout/Search.o
+SRC_CLN = Communication/Client-comm.cpp Client.cpp NegaScout/Search.cpp
 
 all:client server
 
@@ -27,63 +27,50 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Communication/Comm.o: /usr/include/stdio.h /usr/include/features.h
-Communication/Comm.o: /usr/include/stdc-predef.h /usr/include/libio.h
-Communication/Comm.o: /usr/include/_G_config.h /usr/include/wchar.h
-Communication/Comm.o: /usr/include/stdlib.h /usr/include/alloca.h
-Communication/Comm.o: /usr/include/netinet/in.h /usr/include/stdint.h
+Communication/Comm.o: /usr/include/netinet/in.h /usr/include/features.h
+Communication/Comm.o: /usr/include/stdc-predef.h /usr/include/stdint.h
 Communication/Comm.o: /usr/include/endian.h /usr/include/netdb.h
-Communication/Comm.o: /usr/include/rpc/netdb.h /usr/include/errno.h
-Communication/Comm.o: /usr/include/unistd.h /usr/include/getopt.h
-Communication/Comm.o: /usr/include/arpa/inet.h /usr/include/string.h
-Communication/Comm.o: /usr/include/xlocale.h
+Communication/Comm.o: /usr/include/rpc/netdb.h /usr/include/unistd.h
+Communication/Comm.o: /usr/include/getopt.h /usr/include/arpa/inet.h
+Communication/Comm.o: /usr/include/string.h
 Server.o: /usr/include/unistd.h /usr/include/features.h
 Server.o: /usr/include/stdc-predef.h /usr/include/getopt.h
-Server.o: Communication/Comm.hpp /usr/include/stdio.h /usr/include/libio.h
-Server.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
-Server.o: /usr/include/alloca.h /usr/include/netinet/in.h
+Server.o: Communication/Comm.hpp /usr/include/netinet/in.h
 Server.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
-Server.o: /usr/include/rpc/netdb.h /usr/include/errno.h
-Server.o: /usr/include/arpa/inet.h /usr/include/string.h
-Server.o: /usr/include/xlocale.h Communication/Protocol.hpp BitBoard.hpp
-Server.o: BitUtils.hpp BitBoard.hpp
+Server.o: /usr/include/rpc/netdb.h /usr/include/arpa/inet.h
+Server.o: /usr/include/string.h Communication/Protocol.hpp Definitions.hpp
+Server.o: Board/BitBoard.hpp Board/BitUtils.hpp Board/BitBoard.hpp
 Communication/Client-comm.o: Communication/Client-comm.hpp
 Communication/Client-comm.o: /usr/include/time.h /usr/include/features.h
 Communication/Client-comm.o: /usr/include/stdc-predef.h
-Communication/Client-comm.o: /usr/include/xlocale.h Communication/Comm.hpp
-Communication/Client-comm.o: /usr/include/stdio.h /usr/include/libio.h
-Communication/Client-comm.o: /usr/include/_G_config.h /usr/include/wchar.h
-Communication/Client-comm.o: /usr/include/stdlib.h /usr/include/alloca.h
-Communication/Client-comm.o: /usr/include/netinet/in.h /usr/include/stdint.h
-Communication/Client-comm.o: /usr/include/endian.h /usr/include/netdb.h
-Communication/Client-comm.o: /usr/include/rpc/netdb.h /usr/include/errno.h
+Communication/Client-comm.o: Communication/Comm.hpp /usr/include/netinet/in.h
+Communication/Client-comm.o: /usr/include/stdint.h /usr/include/endian.h
+Communication/Client-comm.o: /usr/include/netdb.h /usr/include/rpc/netdb.h
 Communication/Client-comm.o: /usr/include/unistd.h /usr/include/getopt.h
 Communication/Client-comm.o: /usr/include/arpa/inet.h /usr/include/string.h
-Communication/Client-comm.o: Communication/Protocol.hpp BitBoard.hpp
-Communication/Client-comm.o: BitUtils.hpp
-Client.o: TranspositionTable.hpp BitUtils.hpp Communication/Client-comm.hpp
+Communication/Client-comm.o: Communication/Protocol.hpp Definitions.hpp
+Communication/Client-comm.o: Board/BitBoard.hpp Board/BitUtils.hpp
+Client.o: NegaScout/TranspositionTable.hpp Communication/Protocol.hpp
+Client.o: Definitions.hpp Board/BitBoard.hpp Board/BitUtils.hpp
+Client.o: Board/BitUtils.hpp Communication/Client-comm.hpp
 Client.o: /usr/include/time.h /usr/include/features.h
-Client.o: /usr/include/stdc-predef.h /usr/include/xlocale.h
-Client.o: Communication/Comm.hpp /usr/include/stdio.h /usr/include/libio.h
-Client.o: /usr/include/_G_config.h /usr/include/wchar.h /usr/include/stdlib.h
-Client.o: /usr/include/alloca.h /usr/include/netinet/in.h
-Client.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
-Client.o: /usr/include/rpc/netdb.h /usr/include/errno.h /usr/include/unistd.h
-Client.o: /usr/include/getopt.h /usr/include/arpa/inet.h
-Client.o: /usr/include/string.h Communication/Protocol.hpp BitBoard.hpp
-Client.o: BitBoard.hpp ThreadPool/ThreadPool.hpp MoveIterator.hpp
-Client.o: Communication/Protocol.hpp Search.hpp
-Search.o: Search.hpp Communication/Client-comm.hpp /usr/include/time.h
-Search.o: /usr/include/features.h /usr/include/stdc-predef.h
-Search.o: /usr/include/xlocale.h Communication/Comm.hpp /usr/include/stdio.h
-Search.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
-Search.o: /usr/include/stdlib.h /usr/include/alloca.h
-Search.o: /usr/include/netinet/in.h /usr/include/stdint.h
-Search.o: /usr/include/endian.h /usr/include/netdb.h /usr/include/rpc/netdb.h
-Search.o: /usr/include/errno.h /usr/include/unistd.h /usr/include/getopt.h
-Search.o: /usr/include/arpa/inet.h /usr/include/string.h
-Search.o: Communication/Protocol.hpp BitBoard.hpp BitUtils.hpp
-Search.o: TranspositionTable.hpp BitBoard.hpp MoveIterator.hpp
-Search.o: Communication/Protocol.hpp
-BitBoard.o: BitBoard.hpp
-BitUtils.o: BitUtils.hpp
+Client.o: /usr/include/stdc-predef.h Communication/Comm.hpp
+Client.o: /usr/include/netinet/in.h /usr/include/stdint.h
+Client.o: /usr/include/endian.h /usr/include/netdb.h /usr/include/rpc/netdb.h
+Client.o: /usr/include/unistd.h /usr/include/getopt.h
+Client.o: /usr/include/arpa/inet.h /usr/include/string.h
+Client.o: Communication/Protocol.hpp Board/BitBoard.hpp
+Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
+Client.o: /usr/include/_G_config.h /usr/include/wchar.h
+Client.o: NegaScout/MoveIterator.hpp NegaScout/Search.hpp
+Client.o: Communication/Client-comm.hpp NegaScout/TranspositionTable.hpp
+Client.o: NegaScout/Search.hpp
+NegaScout/Search.o: NegaScout/Search.hpp Communication/Client-comm.hpp
+NegaScout/Search.o: NegaScout/TranspositionTable.hpp Board/BitBoard.hpp
+NegaScout/Search.o: Board/BitUtils.hpp Definitions.hpp
+NegaScout/Search.o: NegaScout/MoveIterator.hpp Board/BitUtils.hpp
+NegaScout/Search.o: Communication/Protocol.hpp
+Board/BitBoard.o: Board/BitBoard.hpp Board/BitUtils.hpp Definitions.hpp
+Board/BitUtils.o: Board/BitUtils.hpp
+Utils.o: Communication/Protocol.hpp Definitions.hpp Board/BitBoard.hpp
+Utils.o: Board/BitUtils.hpp Board/BitBoard.hpp

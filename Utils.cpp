@@ -1,5 +1,5 @@
 #include "Communication/Protocol.hpp"
-#include "BitBoard.hpp"
+#include "Board/BitBoard.hpp"
 
 using namespace std;
 

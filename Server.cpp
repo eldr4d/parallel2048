@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include "Communication/Comm.hpp"
 #include "Communication/Protocol.hpp"
-#include "BitBoard.hpp"
+#include "Board/BitBoard.hpp"
 #include <iostream>
 
 using namespace std;

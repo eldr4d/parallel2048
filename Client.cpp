@@ -1,11 +1,11 @@
-#include "TranspositionTable.hpp"
+#include "NegaScout/TranspositionTable.hpp"
 #include "Communication/Client-comm.hpp"
-#include "BitBoard.hpp"
+#include "Board/BitBoard.hpp"
 #include <chrono>
 #include <ctime>
 #include "ThreadPool/ThreadPool.hpp"
-#include "MoveIterator.hpp"
-#include "Search.hpp"
+#include "NegaScout/MoveIterator.hpp"
+#include "NegaScout/Search.hpp"
 //#define NDEBUG
 
 using namespace std;
@@ -23,8 +23,6 @@ typedef struct{
     Move *move;
     int32_t *writeResult;
 }maskedArguments;
-
-// int32_t negaScout(BitBoard_t board, Move *move, player pl, int32_t depth, int32_t alpha, int32_t beta);
 
 void negaScoutWrapper(maskedArguments args){
     int32_t data;
@@ -96,71 +94,6 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     assert(score >= -5);
 	return score;
 }         
-
-
-// int32_t negaMaxExpandOneChild(BitBoard_t board, Move *move, player pl, int32_t depth, int32_t alpha, int32_t beta){
-//      player other = getOtherPlayer(pl);
-
-//     int32_t alph = alpha, bet = beta;
-//     vector<int32_t> best;
-//     vector<unsigned int> moves;
-//     if(pl == PLACER){
-//        ;
-//     }else{
-//         best.reserve(4);
-//         for(unsigned int d=LEFT; d<DIR_SIZE; d++){
-//             BitBoard_t board2 = board;
-//             if(!board2.tryMove(d)){
-//                 continue;
-//             }
-//             moves.push_back(d);
-//             best.push_back(-99999);
-//             maskedArguments args;
-//             args.alpha = -bet;
-//             args.beta = -alph;
-//             args.pl = other;
-//             args.depth = depth-1;
-//             args.board = board2;
-//             args.move = move;
-//             args.writeResult = &(best.back());
-//             myThreadPool.useNewThread(args);
-//         }
-
-//         int32_t bestCost = -numeric_limits<int32_t>::max();
-//         int32_t bestMove;
-//         for(unsigned int i=0; i<best.size(); i++){
-//             while(best[i] == -99999){
-//                 // usleep(10);
-//                 //cout << "Koimame pali " << best.size() << " " << best[i]  << endl;
-//             }
-//             best[i] = -best[i];
-//             if(best[i] > bestCost){
-//                 assert(moves[i] < 4);
-//                 bestMove = moves[i];
-//                 bestCost = best[i];
-//             }
-//         }
-//         move->dir = bestMove;
-//         return bestCost;
-        
-//     }
-//     return 0;
-// }
-
-// template<player other>
-// int32_t search_deeper(BitBoard_t board, int32_t depth, int32_t alpha, int32_t beta, bool &firstChild){
-//     int32_t score;
-//     if(firstChild == true){
-//         score = -negaScout<other>(board, NULL, other, depth, -beta, -alpha);
-//     } else {
-//         score = -negaScout<other>(board, NULL, other, depth, -alpha-1, -alpha);
-//         if(alpha < score){
-//             score = -negaScout<other>(board, NULL, other, depth, -beta, -score);
-//         }
-//     }
-//     return score;
-// }
-
 
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
@@ -287,7 +220,6 @@ int main (int argc, char *argv[])
 #else
                	board.tryMove(msg.dir);
 #endif
-				//board.PrettyPrint();
 			}else{
 				Move move;
 				ExploreTree(board, &move, NORMAL);
@@ -302,10 +234,7 @@ int main (int argc, char *argv[])
 #else
                	board.tryPlace(msg.row,msg.col,msg.two);
 #endif
-			}
-			//sleep (0.2);
-
-	
+			}	
         }
         if (msg.status == GAME_ENDED){
         	board.initialize();

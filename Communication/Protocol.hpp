@@ -2,7 +2,7 @@
 #define _PROTOCOL_H
 
 #include "../Definitions.hpp"
-#include "../BitBoard.hpp"
+#include "../Board/BitBoard.hpp"
 #include <iostream>
 
 /* Messages flowing between the server and the clients */

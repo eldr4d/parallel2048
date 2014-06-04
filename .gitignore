@@ -11,6 +11,9 @@
 # Assembly files
 *.s
 
+# Depend files
+*.d
+
 # Executables
 client
 server
@@ -23,3 +26,5 @@ Main.cpp
 # Doxygen Documentation
 html
 latex
+
+
