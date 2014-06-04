@@ -87,11 +87,15 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
 	int32_t v2 = boardForEv.getHigherTile(&inCorner);
     int32_t score = (v2 << 6) + 1;
 	if(inCorner){
+        score += boardForEv.getMaxCornerChain() << 5;
 		score <<= 2;
 	}
+    score += boardForEv.getMaxChain() << 4;
     int tmp = boardForEv.countFreeTiles() - 7;
-    score += (tmp < 0) ? -tmp : tmp;
-    assert(score >= -5);
+    tmp = (tmp < 0) ? -tmp : tmp;
+    score += (7-tmp) << 2;
+    score += boardForEv.countTileTypes() << 2;
+    assert(score >= 0);
 	return score;
 }         
 

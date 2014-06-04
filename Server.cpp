@@ -358,6 +358,7 @@ int main (int argc, char *argv[])
             board.score -= totalNumberOfInitFours*4;
 			cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
             cout << totalNumberOfInitFours << endl;
+            cout << board.getMaxChain() << endl;
 			cout << board << endl;
 			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
             

@@ -277,6 +277,8 @@ typedef unsigned int tile_value;
  */
 #define CORNERS uint64c(0x9009)
 
+#define ALL_CORNERS uint64c(0x9009900990099009)
+
 /**
  * @brief board's height (and width) size
  *
@@ -549,6 +551,9 @@ public:
     void undoPlace(unsigned int y, unsigned int x, bool is2);
     void undoPlace(uint64 m, bool is2);
     void undoPlace(uint64 m);
+    unsigned int countTileTypes() const;
+    unsigned int getMaxChain() const;
+    unsigned int getMaxCornerChain() const;
 
     /**
      * @brief Returns true if board contains the given tile

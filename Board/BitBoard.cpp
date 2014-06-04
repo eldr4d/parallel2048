@@ -121,6 +121,60 @@ tile_value BitBoard<state_size>::getHigherTile(bool *inCorner){
 }
 
 template<unsigned int state_size>
+unsigned int BitBoard<state_size>::countTileTypes() const{
+    unsigned int count = 0;
+    for (int i = 0 ; i < state_size ; ++i){
+        uint64 t = state[i];
+        if (t & (FBOARD               )) ++count;
+        if (t & (FBOARD << (  SQR_POP))) ++count;
+        if (t & (FBOARD << (2*SQR_POP))) ++count;
+        if (t & (FBOARD << (3*SQR_POP))) ++count;
+    }
+    return count;
+}
+
+template<unsigned int state_size>
+unsigned int BitBoard<state_size>::getMaxCornerChain() const{
+    int i = state_size;
+    while (!state[--i]); //locate greatest group
+    uint64 mask = rotateRight<uint64, SQR_POP>(FBOARD);
+    while (!(mask & state[i])) mask >>= SQR_POP;
+    //mask now points on higher tile group at state[i]
+    uint64 cur = state[i] & mask & ALL_CORNERS;
+    unsigned int count = 0;
+    while (cur){
+        if ((mask & FBOARD) && --i < 0) break; //do not change order of conds!!!
+        ++count;
+        cur = rotateRight<uint64, SQR_POP-4>(cur) | rotateRight<uint64, 1+SQR_POP>(cur);
+        cur = cur | rotateRight<uint64, 3>(cur);
+        mask = rotateRight<uint64, SQR_POP>(mask);
+        cur &= mask & state[i];
+    }
+    return count;
+}
+
+
+template<unsigned int state_size>
+unsigned int BitBoard<state_size>::getMaxChain() const{
+    int i = state_size;
+    while (!state[--i]); //locate greatest group
+    uint64 mask = rotateRight<uint64, SQR_POP>(FBOARD);
+    while (!(mask & state[i])) mask >>= SQR_POP;
+    //mask now points on higher tile group at state[i]
+    uint64 cur = state[i] & mask;
+    unsigned int count = 0;
+    while (cur){
+        if ((mask & FBOARD) && --i < 0) break; //do not change order of conds!!!
+        ++count;
+        cur = rotateRight<uint64, SQR_POP-4>(cur) | rotateRight<uint64, 1+SQR_POP>(cur);
+        cur = cur | rotateRight<uint64, 3>(cur);
+        mask = rotateRight<uint64, SQR_POP>(mask);
+        cur &= mask & state[i];
+    }
+    return count;
+}
+
+template<unsigned int state_size>
 unsigned int BitBoard<state_size>::countOccupiedTiles() const{
     unsigned int v = state[0] & FBOARD;
     v = v - ((v >> 1) & 0x5555);
