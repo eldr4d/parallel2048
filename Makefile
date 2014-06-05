@@ -60,16 +60,19 @@ Client.o: /usr/include/endian.h /usr/include/netdb.h /usr/include/rpc/netdb.h
 Client.o: /usr/include/unistd.h /usr/include/getopt.h
 Client.o: /usr/include/arpa/inet.h /usr/include/string.h
 Client.o: Communication/Protocol.hpp Board/BitBoard.hpp
-Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
-Client.o: /usr/include/_G_config.h /usr/include/wchar.h
 Client.o: NegaScout/MoveIterator.hpp NegaScout/Search.hpp
 Client.o: Communication/Client-comm.hpp NegaScout/TranspositionTable.hpp
-Client.o: NegaScout/Search.hpp
+Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
+Client.o: /usr/include/_G_config.h /usr/include/wchar.h NegaScout/Search.hpp
 NegaScout/Search.o: NegaScout/Search.hpp Communication/Client-comm.hpp
-NegaScout/Search.o: NegaScout/TranspositionTable.hpp Board/BitBoard.hpp
-NegaScout/Search.o: Board/BitUtils.hpp Definitions.hpp
-NegaScout/Search.o: NegaScout/MoveIterator.hpp Board/BitUtils.hpp
-NegaScout/Search.o: Communication/Protocol.hpp
+NegaScout/Search.o: NegaScout/TranspositionTable.hpp
+NegaScout/Search.o: Communication/Protocol.hpp Definitions.hpp
+NegaScout/Search.o: Board/BitBoard.hpp Board/BitUtils.hpp Board/BitUtils.hpp
+NegaScout/Search.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h
+NegaScout/Search.o: /usr/include/features.h /usr/include/stdc-predef.h
+NegaScout/Search.o: /usr/include/libio.h /usr/include/_G_config.h
+NegaScout/Search.o: /usr/include/wchar.h /usr/include/unistd.h
+NegaScout/Search.o: /usr/include/getopt.h NegaScout/MoveIterator.hpp
 Board/BitBoard.o: Board/BitBoard.hpp Board/BitUtils.hpp Definitions.hpp
 Board/BitUtils.o: Board/BitUtils.hpp
 Utils.o: Communication/Protocol.hpp Definitions.hpp Board/BitBoard.hpp

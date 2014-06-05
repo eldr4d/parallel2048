@@ -3,9 +3,10 @@
 #include "Board/BitBoard.hpp"
 #include <chrono>
 #include <ctime>
-#include "ThreadPool/ThreadPool.hpp"
 #include "NegaScout/MoveIterator.hpp"
 #include "NegaScout/Search.hpp"
+#include <atomic>
+
 //#define NDEBUG
 
 using namespace std;
@@ -13,28 +14,8 @@ using namespace std;
 TranspositionTable tt;
 BitBoard_t board;
 
-uint64_t horizonNodes;
-uint64_t totalNodes;
-
-typedef struct{
-    player pl;
-    int32_t alpha, beta, depth;
-    BitBoard_t board;
-    Move *move;
-    int32_t *writeResult;
-}maskedArguments;
-
-void negaScoutWrapper(maskedArguments args){
-    int32_t data;
-    if (args.pl == player::PLACER){
-        data = negaScout<player::PLACER>(args.board, args.depth, args.alpha, args.beta);
-    } else {
-        data = negaScout<player::NORMAL>(args.board, args.depth, args.alpha, args.beta);
-    }
-    *(args.writeResult) = data;
-}
-
-ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
+std::atomic<uint64_t> horizonNodes;
+std::atomic<uint64_t> totalNodes;
 
 int GetSide(int argc, char *argv[])
 {
@@ -102,15 +83,14 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
 
-    int32_t depth = 7;
+    int32_t depth = 8;
 
     maskedArguments args;
     args.alpha = -(numeric_limits<int32_t>::max()-100000);
     args.beta = (numeric_limits<int32_t>::max()-100000);
     args.depth = depth;
     args.board = board;
-    args.move = move;
-    
+
     horizonNodes = 0;
     totalNodes   = 0;
 
@@ -134,7 +114,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //while(bestcost == -99999)
             //    usleep(10);
             move->dir = 1000;
-			bestcost = negaScout<NORMAL>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+			bestcost = negaScout<NORMAL, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
 		}else{
             // args.pl = PLACER;
             // args.color = false;
@@ -142,7 +122,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             // while(bestcost == -99999)
             //     usleep(10);
             // bestcost = -bestcost;
-			bestcost = -negaScout<PLACER>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000));
+			bestcost = -negaScout<PLACER, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000));
         }
         tt.extractBest(board, pl, move);
 
@@ -162,7 +142,9 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         elapsed_seconds= end-start;
         totalSeconds -= elapsed_seconds.count();
 		depth++;
-    }while(totalSeconds>0 && depth < 60);
+    }while(totalSeconds>0 && depth < 8);
+    char ch;
+    //cin >> ch;
 
 
     return 0;
@@ -177,7 +159,7 @@ int main (int argc, char *argv[])
     unsigned short  port;
     char            host[100];
 
-    srand(time(NULL) % (1 << 24));
+    //srand(time(NULL) % (1 << 24));
 
     if(argc < 2) {
 		cout << "Usage: " << argv[0] << " <normal|placer> [server-port] [server-host] [nodelimit]" << endl;
@@ -203,10 +185,17 @@ int main (int argc, char *argv[])
         while (msg.status != GAME_ENDED && msg.status != ABORT) {
 
 			if(side == PLACER){
-				ptile c = board.placeRandom();
-               	cout << board << endl;
-		       	SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
-				cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;
+				/*ptile c = board.placeRandom();
+                cout << board << endl;
+                SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
+                cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;*/
+                uint64 f = board.getEmptyTiles();
+                f = pop_lsb(f);
+                board.makePlace(f);
+                Move m;
+                BitBoard_t::intToMove(&m, (int) square(f), PLACER);
+                SendPlacerAndGetNormalMove (socket, m.row, m.col, m.v, &msg);
+                cout << "My move is " << m.row << "," << m.col << " v = " << (1 << m.v) << endl << endl;
 		       	/*
 				Move move;
 				ExploreTree(board, &move, PLACER);

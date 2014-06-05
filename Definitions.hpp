@@ -2,6 +2,7 @@
 #define _DEFINITIONS_HPP
 
 #include <thread>
+#include <atomic>
 
 using namespace std;
 
@@ -18,8 +19,8 @@ enum player{
     PLACER,
 };
 
-extern uint64_t horizonNodes;
-extern uint64_t totalNodes;
+extern std::atomic<uint64_t> horizonNodes;
+extern std::atomic<uint64_t> totalNodes;
 
 constexpr player getOtherPlayer(player pl) {
     return (player) (pl ^ 1); //== PLACER ? NORMAL : PLACER;
