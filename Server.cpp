@@ -56,7 +56,7 @@ void EndServerComm (int sock1, int sock2)
 int GetFirstMessage (int sock)
 {
     FirstMsgToServer   msg;
-    int nbytes;
+    size_t nbytes;
 
     nbytes = read (sock, (char *)&msg, sizeof(FirstMsgToServer));
 
@@ -82,8 +82,8 @@ int GetFirstMessage (int sock)
 void InitServerComm (int *sock, int *normal_sock, int *placer_sock, unsigned short port)
 {
     fd_set active_fd_set, read_fd_set;
-    int i, clients_connected, messages, sock1, sock2;
-    int side, side1, side2;
+    int i, clients_connected, messages, sock1 = 0, sock2 = 0;
+    int side1, side2;
     struct sockaddr_in clientname;
     int size;
     static bool first_time = true;
@@ -269,7 +269,6 @@ int main (int argc, char *argv[])
     bool all_ok, technical_lose;
     unsigned short port;
     int totalNumberOfInitFours = 0;
-	int side=0;
 
     all_ok = true;
     technical_lose = false;

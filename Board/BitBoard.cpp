@@ -118,6 +118,7 @@ tile_value BitBoard<state_size>::getHigherTile(bool *inCorner){
 			return v + (i << 2);
 		}
 	}
+    return 0;
 }
 
 template<unsigned int state_size>
@@ -237,7 +238,7 @@ ptile BitBoard<state_size>::mask2xy(uint64 x){
 }
 
 template<unsigned int state_size>
-bool BitBoard<state_size>::intToMove(Move *m, int bmove, player pl){
+void BitBoard<state_size>::intToMove(Move *m, int bmove, player pl){
     assert(m);
     if (pl == player::PLACER){
         ptile pt = mask2xy(1 << (bmove & 0xF));

@@ -94,7 +94,7 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     int tmp = boardForEv.countFreeTiles() - 7;
     tmp = (tmp < 0) ? -tmp : tmp;
     score += (7-tmp) << 2;
-    score += boardForEv.countTileTypes() << 2;
+    score += boardForEv.countTileTypes() << 1;
     assert(score >= 0);
 	return score;
 }         
@@ -173,7 +173,7 @@ int main (int argc, char *argv[])
 {
 
     MsgFromServer   msg;
-    int             dir, socket, side;
+    int             socket, side;
     unsigned short  port;
     char            host[100];
 

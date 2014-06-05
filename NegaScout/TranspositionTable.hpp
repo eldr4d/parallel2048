@@ -159,7 +159,7 @@ public:
         sc = (ndata >> tte_shft_sscore) & tte_mask_sscore;
         if (sc & (1 << (tte_bits_sscore-1))) sc |= ~tte_mask_sscore;
         assert(sc == score);
-        assert(move == ((ndata >> tte_shft_killer) & tte_mask_killer));
+        assert(move == ((int) ((ndata >> tte_shft_killer) & tte_mask_killer)));
     }
 
     void preparePVposition(BitBoard_t board){
@@ -202,7 +202,9 @@ public:
         stringstream pv;
         Move m;
         int depth = 0;
+#ifndef NDEBUG
         BitBoard_t b2 = board;
+#endif
         while (depth++ != max_depth){
             tthash hash = board.getHash();
             int index = getTTIndex(hash);

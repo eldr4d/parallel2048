@@ -542,7 +542,7 @@ public:
     uint64 getHash() const;
     
     static ptile mask2xy(uint64 x);
-    static bool intToMove(Move *m, int killer, player pl);
+    static void intToMove(Move *m, int killer, player pl);
 
     void makePlace(unsigned int y, unsigned int x, bool is2);
     void makePlace(uint64 m, bool is2);

@@ -7,8 +7,7 @@ using namespace std;
 template<player pl>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta){
     ++totalNodes;
-    player other = getOtherPlayer(pl);
-
+    
     //An ftasame sta katw katw fyla tote gyrname thn katastash
     if(depth == 0){
         ++horizonNodes;

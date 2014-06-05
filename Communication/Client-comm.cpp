@@ -25,7 +25,7 @@ void InitSockaddr (struct sockaddr_in *name, const char *hostname, unsigned shor
 	name->sin_port = htons (port);
     
 	/* If hostname is not defined, assume the server is on my machine */
-	if (hostname == NULL || hostname[0] == NULL)
+	if (hostname == NULL || !(hostname[0]))
 		hostinfo = gethostbyname ("localhost");
 	else 
 		hostinfo = gethostbyname (hostname);
@@ -66,7 +66,7 @@ int InitClientComm (int server_port, char *server_host)
 
 void GetMessageFromServer (int sock, MsgFromServer *msg)
 {
-    int nbytes;
+    size_t nbytes;
 
     nbytes = read (sock, (char *)msg, sizeof(MsgFromServer));
     if (nbytes < sizeof(MsgFromServer)) {
@@ -78,7 +78,7 @@ void GetMessageFromServer (int sock, MsgFromServer *msg)
 void SendFirstMessage (int sock, int side)
 {
     FirstMsgToServer to_msg;
-    int nbytes;
+    size_t nbytes;
 
     assert (side == 0 || side == 1);
     to_msg = side;
@@ -113,9 +113,7 @@ void SendPlacerAndGetNormalMove (int sock, int row, int col, int value, MsgFromS
   	msgToServ.row = row;
   	msgToServ.col = col;
   	msgToServ.pl = PLACER;
-    int nbytes;
-    double time_left;
-
+    size_t nbytes;
 
     nbytes = write (sock, (char *)&msgToServ, sizeof(MsgToServer));
     if (nbytes < sizeof(MsgToServer)) {
@@ -132,9 +130,7 @@ void SendNormalAndGetPlacerMove (int sock, int dir, MsgFromServer *msg)
 
   	msgToServ.dir = dir;
   	msgToServ.pl = NORMAL;
-    int nbytes;
-    double time_left;
-
+    size_t nbytes;
 
     nbytes = write (sock, (char *)&msgToServ, sizeof(MsgToServer));
     if (nbytes < sizeof(MsgToServer)) {
