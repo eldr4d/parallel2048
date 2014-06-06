@@ -113,8 +113,8 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //myThreadPool.useNewThread(args);
             //while(bestcost == -99999)
             //    usleep(10);
-            move->dir = 1000;
-			bestcost = negaScout<NORMAL, false>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000, true);
+            move->dir = 1000;//10:2628 6892 //32972
+			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000, true);
 		}else{
             // args.pl = PLACER;
             // args.color = false;

@@ -56,7 +56,7 @@ public:
             //move is always valid! play it and return score
             board.makePlace(p);
             if(mainThread){
-                if(true && !firstChild && depth > 7){
+                if(true && resIter >= 1 && depth > 5){ //!firstChild
                     allResults[resIter].score = 0; //Thread spawned
                     allResults[resIter].threadSpawned = true;
                     spawnThread<player::NORMAL>(board, depth, alpha, beta, firstChild, &allResults[resIter].score);
@@ -95,20 +95,21 @@ public:
                 } while(!bd2.tryMove(allResults[resIter].move));
             }
             //move was valid! play it and return score
-            if(mainThread){
-                if(true && !firstChild && depth > 7){
-                    allResults[resIter].score = 0; //Thread spawned
-                    allResults[resIter].threadSpawned = true;
-                    spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[resIter].score);
-                }else{
-                    allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
-                    allResults[resIter].threadSpawned = false;
-                }
-                resIter++;
-            }else{
+            // if(mainThread){
+            //     if(true && !firstChild && depth > 7){
+            //         allResults[resIter].score = 0; //Thread spawned
+            //         allResults[resIter].threadSpawned = true;
+            //         spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[resIter].score);
+            //     }else{
+            //         allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
+            //         allResults[resIter].threadSpawned = false;
+            //     }
+            //     resIter++;
+            // }else{
+                allResults[resIter].threadSpawned = false;
                 allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
                 resIter++;
-            }
+            // }
             assert(resIter < 16*2-2);
         }
     }

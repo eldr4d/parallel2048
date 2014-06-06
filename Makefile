@@ -11,10 +11,16 @@ SRC_SER = Communication/Comm.hpp Server.cpp
 OBJ_CLN = Communication/Client-comm.o Client.o NegaScout/Search.o
 SRC_CLN = Communication/Client-comm.cpp Client.cpp NegaScout/Search.cpp
 
+parallel:CXXFLAGS += -DPARALLELIMPL=true
+single:CXXFLAGS += -DPARALLELIMPL=false
+
+parallel:clean all
+single:clean all
+
 all:client server
 
 clean:
-	rm $(OBJ_ALL) $(OBJ_SER) $(OBJ_CLN) server client
+	-rm $(OBJ_ALL) $(OBJ_SER) $(OBJ_CLN) server client
 
 server:$(OBJ_ALL) $(OBJ_SER)
 	$(CXX) $(CXXFLAGS) -o server $(OBJ_ALL) $(OBJ_SER) $(LDFLAGS)

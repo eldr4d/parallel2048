@@ -92,11 +92,11 @@ public:
             if (bs == Cut_Node){        //entry contains a Cut-Node, alpha...
                 //if (sc > alpha) alpha   = sc;
             } else if (bs == All_Node){ //entry contains an All-Node, beta...
-                if (sc < beta)  beta    = sc;
+                // if (sc < beta)  beta    = sc;
                 return NULL_MOVE;       //All-Nodes do not produce a killer move
             } else {                    //entry contains a Pv-Node, replace...
-                alpha   = sc;
-                beta    = sc;
+                // alpha   = sc;
+                // beta    = sc;
             }
         } else if (bs == All_Node){
             return NULL_MOVE;

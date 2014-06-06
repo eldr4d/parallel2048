@@ -26,6 +26,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         // statistics(++hashHitCutOff);
         return alpha;
     }
+    // kiMove = -1;
     int bmove = -1;
 
     int32_t alph = alpha, bet = beta;
@@ -41,27 +42,28 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         //if (mIt.allResults[mIt.resIter-1].move == -1) break;                 //equivalent
         int tmp = mIt.allResults[mIt.resIter-1].move;
         if (tmp < 0) break;                     //and rt.score is invalid
-
+        firstChild = false; //set this here
         if(mainThread){//Template if
-            if(mIt.allResults[mIt.resIter-1].threadSpawned){
+            if(mIt.allResults[mIt.resIter-1].threadSpawned) {
                 threadsSpawned = true;
-                continue;
-            }else{
-                iter++;
+                continue;//7576 16780
             }
-        }else{
-            if(iter >= 1)
-                continue;
-            iter++;
+        //     // }else{
+        //     //    iter++;
+        //     // }
+        // }else{
+            // if (pl == PLACER && mIt.resIter >= 2) continue;
+        //     // if(mIt.resIter >= 2)
+        //         continue;
+        //     // iter++;
         }
-        if(amIfirst && depth == 9){
-            cout << " ------ -- -- - -- - -- - - " << endl << board << endl;
-            cout << "f " << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter-1].score << " " << hex << mIt.allResults[iter-1].move << dec << endl;
+        // if(amIfirst && depth == 9){
+        //     cout << " ------ -- -- - -- - -- - - " << endl << board << endl;
+        //     cout << "f " << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter-1].score << " " << hex << mIt.allResults[iter-1].move << dec << endl;
 
-        }
+        // }
         //mIt.allResults[mIt.resIter-1].move is always non-negative if a valid move was played
 
-        firstChild = false; //set this here
         //Setting firstChild here permits skipping the rest of current iteration
         //if score must be ignored for now
 
@@ -76,62 +78,39 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         if (mIt.allResults[mIt.resIter-1].score >= bet){
             tt.addTTEntry(hash, depth, mIt.allResults[mIt.resIter-1].move, mIt.allResults[mIt.resIter-1].score, pl==PLACER, Cut_Node);
             return bet;                         //fail-hard beta cut-off
-        }
+        }//never with killer!
 
         if (mIt.allResults[mIt.resIter-1].score > alph){                   //better move found
             alph  = mIt.allResults[mIt.resIter-1].score;
             bmove = mIt.allResults[mIt.resIter-1].move;
         }
     }
-    if(mainThread){
-        bool failHardCuttoff = false;
-        while(threadsSpawned  &&  mIt.allResults[iter].move != -1 && iter != mIt.resIter){
+    if(mainThread && threadsSpawned){
+        int failHardCuttoff = 0;
+        iter = 0;
+        while(mIt.allResults[iter].move != -1){
             //if(pl==NORMAL)
             while(mIt.allResults[iter].score == 0){
                 usleep(0.01);
             }
 
             if(!failHardCuttoff){
-                if(depth == 9)
-                    cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
+                // if(depth == 9)
+                //     cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
                 if (mIt.allResults[iter].score >= bet){
                     tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
-                    failHardCuttoff = true;//fail-hard beta cut-off
-                }
-                if(!failHardCuttoff){
-                    if (mIt.allResults[iter].score > alph){                   //better move found
-                        alph  = mIt.allResults[iter].score;
-                        bmove = mIt.allResults[iter].move;
-                        assert(bmove >= 0);
-                    }
+                    failHardCuttoff = iter+1;//fail-hard beta cut-off
+                } else if (mIt.allResults[iter].score > alph){                   //better move found
+                    alph  = mIt.allResults[iter].score;
+                    bmove = mIt.allResults[iter].move;
+                    assert(bmove >= 0);
                 }
             }
             iter++;
         }
         if(failHardCuttoff){
-            return bet;
-        }
-    }else{
-        bool failHardCuttoff = false;
-        while(mIt.allResults[iter].move != -1 && iter != mIt.resIter){
-            if(!failHardCuttoff){
-                if(amIfirst && depth == 9)
-                    cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
-                if (mIt.allResults[iter].score >= bet){
-                    tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
-                    failHardCuttoff = true;//fail-hard beta cut-off
-                }
-                if(!failHardCuttoff){
-                    if (mIt.allResults[iter].score > alph){                   //better move found
-                        alph  = mIt.allResults[iter].score;
-                        bmove = mIt.allResults[iter].move;
-                        assert(bmove >= 0);
-                    }
-                }
-            }
-            iter++;
-        }
-        if(failHardCuttoff){
+            // iter = failHardCuttoff - 1;
+            // tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
             return bet;
         }
     }
