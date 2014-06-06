@@ -7,7 +7,7 @@
 using namespace std;
 
 
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS 1
 
 typedef struct{
     int dir;

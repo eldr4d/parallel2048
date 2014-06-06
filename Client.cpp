@@ -83,7 +83,7 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
 
-    int32_t depth = 8;
+    int32_t depth = 10;
 
     maskedArguments args;
     args.alpha = -(numeric_limits<int32_t>::max()-100000);
@@ -114,7 +114,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             //while(bestcost == -99999)
             //    usleep(10);
             move->dir = 1000;
-			bestcost = negaScout<NORMAL, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+			bestcost = negaScout<NORMAL, false>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000, true);
 		}else{
             // args.pl = PLACER;
             // args.color = false;
@@ -122,19 +122,19 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
             // while(bestcost == -99999)
             //     usleep(10);
             // bestcost = -bestcost;
-			bestcost = -negaScout<PLACER, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000));
+			bestcost = -negaScout<PLACER, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000), true);
         }
         tt.extractBest(board, pl, move);
 
         //based on UCI format
         cout << "info";
         cout << " score " << bestcost;
-        cout << " depth " << depth;
+        /*cout << " depth " << depth;
         cout << " time "  << chrono::duration_cast<chrono::milliseconds>(
                                     chrono::system_clock::now() - glob_start
                                 ).count();
         cout << " nodes " << totalNodes;
-        cout << " pv "    << tt.extractPV(board, pl, 120);
+        cout << " pv "    << tt.extractPV(board, pl, 120);*/
         cout << endl;
         //end of info message
 
@@ -142,7 +142,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         elapsed_seconds= end-start;
         totalSeconds -= elapsed_seconds.count();
 		depth++;
-    }while(totalSeconds>0 && depth < 8);
+    }while(totalSeconds>0 && depth < 6);
     char ch;
     //cin >> ch;
 

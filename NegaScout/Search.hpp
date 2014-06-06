@@ -29,7 +29,7 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv);
 
 
 template<player pl, bool mainThread>
-int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
+int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
 
 
 template<player other, bool mainThread>

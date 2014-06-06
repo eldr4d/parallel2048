@@ -90,7 +90,7 @@ public:
 
             // entry's depth is greater than current, update bounds
             if (bs == Cut_Node){        //entry contains a Cut-Node, alpha...
-                if (sc > alpha) alpha   = sc;
+                //if (sc > alpha) alpha   = sc;
             } else if (bs == All_Node){ //entry contains an All-Node, beta...
                 if (sc < beta)  beta    = sc;
                 return NULL_MOVE;       //All-Nodes do not produce a killer move

@@ -56,7 +56,7 @@ public:
             //move is always valid! play it and return score
             board.makePlace(p);
             if(mainThread){
-                if(true && !firstChild && depth > 5){
+                if(true && !firstChild && depth > 7){
                     allResults[resIter].score = 0; //Thread spawned
                     allResults[resIter].threadSpawned = true;
                     spawnThread<player::NORMAL>(board, depth, alpha, beta, firstChild, &allResults[resIter].score);
@@ -70,7 +70,7 @@ public:
                 resIter++;
             }
             board.undoPlace(p);
-            assert(resIter != 16*2-2);
+            assert(resIter < 16*2-2);
         } else {
             T bd2 = board;
             if (killer >= 0){
@@ -96,7 +96,7 @@ public:
             }
             //move was valid! play it and return score
             if(mainThread){
-                if(true && !firstChild && depth > 5){
+                if(true && !firstChild && depth > 7){
                     allResults[resIter].score = 0; //Thread spawned
                     allResults[resIter].threadSpawned = true;
                     spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[resIter].score);
@@ -109,7 +109,7 @@ public:
                 allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
                 resIter++;
             }
-            assert(resIter != 16*2-2);
+            assert(resIter < 16*2-2);
         }
     }
 
