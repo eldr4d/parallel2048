@@ -6,6 +6,8 @@ using namespace std;
 
 ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
 
+search_result allResults[16*2-2];
+
 template<player pl, bool mainThread>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
     ++totalNodes;
@@ -41,13 +43,13 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
     while(true) {
         mIt.searchNextChild(board, kiMove, depth-1, alph, bet, firstChild);
         kiMove = -1;
-        //mIt.allResults[mIt.resIter-1].move == -1 signals that no more moves exists, no move was played
-        //if (mIt.allResults[mIt.resIter-1].move == -1) break;                 //equivalent
-        int tmp = mIt.allResults[mIt.resIter-1].move;
+        //allResults[mIt.resIter-1].move == -1 signals that no more moves exists, no move was played
+        //if (allResults[mIt.resIter-1].move == -1) break;                 //equivalent
+        int tmp = allResults[mIt.resIter-1].move;
         if (tmp < 0) break;                     //and rt.score is invalid
         firstChild = false; //set this here
         if(mainThread){//Template if
-            if(mIt.allResults[mIt.resIter-1].threadSpawned) {
+            if(allResults[mIt.resIter-1].threadSpawned) {
                 threadsSpawned = true;
                 //continue;//7576 16780
             }
@@ -62,64 +64,65 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         }
 
 
-        while(mIt.allResults[mIt.resIter-1].score == 0){
+        while(allResults[mIt.resIter-1].score == 0){
             usleep(0.01);
         }
         // if(amIfirst && depth == 9){
         //     cout << " ------ -- -- - -- - -- - - " << endl << board << endl;
-        //     cout << "f " << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter-1].score << " " << hex << mIt.allResults[iter-1].move << dec << endl;
+        //     cout << "f " << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  allResults[iter-1].score << " " << hex << allResults[iter-1].move << dec << endl;
 
         // }
-        //mIt.allResults[mIt.resIter-1].move is always non-negative if a valid move was played
+        //allResults[mIt.resIter-1].move is always non-negative if a valid move was played
 
         //Setting firstChild here permits skipping the rest of current iteration
         //if score must be ignored for now
 
         //possible set a continue here such that if a new thread is used for
         //subtree search, to skip score checking ? 
-        //if (mIt.allResults[mIt.resIter-1].move < -1) continue;
+        //if (allResults[mIt.resIter-1].move < -1) continue;
 
         /*if(amIfirst && depth == 9 && mIt.resIter >= 2){  
-            cout << iter-1 << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter-1].score << " " << hex << mIt.allResults[iter-1].move << dec << endl;
+            cout << iter-1 << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  allResults[iter-1].score << " " << hex << allResults[iter-1].move << dec << endl;
         }*/
         //move played!
-        assert(mIt.allResults[mIt.resIter-1].score <= beta);
-        assert(mIt.allResults[mIt.resIter-1].score >= alpha);
-        assert(mIt.allResults[mIt.resIter-1].score <= bet);
-        assert(mIt.allResults[mIt.resIter-1].score >= alph);
-        if (mIt.allResults[mIt.resIter-1].score >= bet){
-            tt.addTTEntry(hash, depth, mIt.allResults[mIt.resIter-1].move, mIt.allResults[mIt.resIter-1].score, pl==PLACER, Cut_Node);
+        assert(allResults[mIt.resIter-1].score <= beta);
+        assert(allResults[mIt.resIter-1].score >= alpha);
+        assert(allResults[mIt.resIter-1].score <= bet);
+        assert(allResults[mIt.resIter-1].score >= alph);
+        // assert(allResults[mIt.resIter-1].move == m);
+        if (allResults[mIt.resIter-1].score >= bet){
+            tt.addTTEntry(hash, depth, allResults[mIt.resIter-1].move, allResults[mIt.resIter-1].score, pl==PLACER, Cut_Node);
             return bet;                         //fail-hard beta cut-off
         }
 
-        if (mIt.allResults[mIt.resIter-1].score > alph){                   //better move found
-            alph  = mIt.allResults[mIt.resIter-1].score;
-            bmove = mIt.allResults[mIt.resIter-1].move;
+        if (allResults[mIt.resIter-1].score > alph){                   //better move found
+            alph  = allResults[mIt.resIter-1].score;
+            bmove = allResults[mIt.resIter-1].move;
             assert(bmove >= 0);
         }
     }
     if(mainThread && threadsSpawned){
         // int failHardCuttoff = 0;
         // iter = 0;
-        // while(mIt.allResults[iter].move != -1){
+        // while(allResults[iter].move != -1){
         //     //if(pl==NORMAL)
-        //     while(mIt.allResults[iter].score == 0){
+        //     while(allResults[iter].score == 0){
         //         usleep(0.01);
         //     }
 
-        //     assert(mIt.allResults[iter].score <= beta);
-        //     assert(mIt.allResults[iter].score >= alpha);
-        //     assert(mIt.allResults[iter].score <= bet);
-        //     // assert(mIt.allResults[iter].score >= alph);
+        //     assert(allResults[iter].score <= beta);
+        //     assert(allResults[iter].score >= alpha);
+        //     assert(allResults[iter].score <= bet);
+        //     // assert(allResults[iter].score >= alph);
         //     if(!failHardCuttoff){
         //         // if(depth == 9)
-        //         //     cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
-        //         if (mIt.allResults[iter].score >= bet){
-        //             // tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
+        //         //     cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  allResults[iter].score << " " << hex << allResults[iter].move << dec << endl;
+        //         if (allResults[iter].score >= bet){
+        //             // tt.addTTEntry(hash, depth, allResults[iter].move, allResults[iter].score, pl==PLACER, Cut_Node);
         //             failHardCuttoff = iter+1;//fail-hard beta cut-off
-        //         } else if (mIt.allResults[iter].score > alph){                   //better move found
-        //             alph  = mIt.allResults[iter].score;
-        //             bmove = mIt.allResults[iter].move;
+        //         } else if (allResults[iter].score > alph){                   //better move found
+        //             alph  = allResults[iter].score;
+        //             bmove = allResults[iter].move;
         //             assert(bmove >= 0);
         //         }
         //     }
@@ -127,7 +130,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         // }
         // if(failHardCuttoff){
         //     iter = failHardCuttoff - 1;
-        //     tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
+        //     tt.addTTEntry(hash, depth, allResults[iter].move, allResults[iter].score, pl==PLACER, Cut_Node);
         //     return bet;
         // }
     }

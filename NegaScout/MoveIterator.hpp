@@ -14,12 +14,14 @@ struct search_result{
     bool threadSpawned;
 };
 
+extern search_result allResults[16*2-2];
+
+
 template<typename T, player pl, bool mainThread>
 class MoveIterator_t{
     uint64 moves;
 public:
     //total squares * two possible moves for placer in the same square -2 for the always oqupied square
-    struct search_result allResults[16*2-2];
     int32_t resIter;
 
 public:
