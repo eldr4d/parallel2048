@@ -90,16 +90,27 @@ public:
 
             // entry's depth is greater than current, update bounds
             if (bs == Cut_Node){        //entry contains a Cut-Node, alpha...
-                //if (sc > alpha) alpha   = sc;
+                if (sc > alpha) alpha   = sc;
             } else if (bs == All_Node){ //entry contains an All-Node, beta...
-                // if (sc < beta)  beta    = sc;
+                if (sc < beta)  beta    = sc;
                 return NULL_MOVE;       //All-Nodes do not produce a killer move
             } else {                    //entry contains a Pv-Node, replace...
-                // alpha   = sc;
-                // beta    = sc;
+                alpha   = sc;
+                beta    = sc;
             }
-        } else if (bs == All_Node){
-            return NULL_MOVE;
+        } else {
+            // if (bs == All_Node){
+            //     return NULL_MOVE;
+            // }
+
+            // entry's depth is greater than current, update bounds
+            if (bs == Cut_Node){        //entry contains a Cut-Node, alpha...
+                // return NULL_MOVE;//remove
+            } else if (bs == All_Node){ //entry contains an All-Node, beta...
+                return NULL_MOVE;       //All-Nodes do not produce a killer move
+            } else {                    //entry contains a Pv-Node, replace...
+                return NULL_MOVE;//remove
+            }
         }
         assert(placer || ((ndata >> tte_shft_killer) & tte_mask_killer));
         return (ndata >> tte_shft_killer) & tte_mask_killer;

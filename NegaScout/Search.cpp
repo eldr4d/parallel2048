@@ -10,26 +10,29 @@ template<player pl, bool mainThread>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
     ++totalNodes;
     player other = getOtherPlayer(pl);
+    uint64 hash = board.getHash();
 
     //An ftasame sta katw katw fyla tote gyrname thn katastash
     if(depth == 0){
         ++horizonNodes;
         int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
         temp = (pl == NORMAL) ? temp : -temp;
-        return temp;
+        // cout << hex << hash << dec << temp << endl;
+        return max(min(temp, beta), alpha);
     }
 
-    uint64 hash = board.getHash();
     //alpha beta are passed by reference!!!
-    int kiMove = tt.retrieveTTEntry(hash, depth, alpha, beta, pl == PLACER);
-    if (alpha >= beta) {
+    int32_t alph = alpha, bet = beta;
+    int kiMove = tt.retrieveTTEntry(hash, depth, alph, bet, pl == PLACER);
+    if (alph >= bet) {
         // statistics(++hashHitCutOff);
-        return alpha;
+        if (bet  >= beta ) return beta;
+        if (alph <= alpha) return alpha;
+        return alph;
     }
     // kiMove = -1;
     int bmove = -1;
 
-    int32_t alph = alpha, bet = beta;
     bool firstChild = true;
 
     MoveIterator_t<BitBoard_t, pl, mainThread> mIt(board);
@@ -46,7 +49,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         if(mainThread){//Template if
             if(mIt.allResults[mIt.resIter-1].threadSpawned) {
                 threadsSpawned = true;
-                continue;//7576 16780
+                //continue;//7576 16780
             }
         //     // }else{
         //     //    iter++;
@@ -56,6 +59,11 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         //     // if(mIt.resIter >= 2)
         //         continue;
         //     // iter++;
+        }
+
+
+        while(mIt.allResults[mIt.resIter-1].score == 0){
+            usleep(0.01);
         }
         // if(amIfirst && depth == 9){
         //     cout << " ------ -- -- - -- - -- - - " << endl << board << endl;
@@ -75,44 +83,53 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
             cout << iter-1 << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter-1].score << " " << hex << mIt.allResults[iter-1].move << dec << endl;
         }*/
         //move played!
+        assert(mIt.allResults[mIt.resIter-1].score <= beta);
+        assert(mIt.allResults[mIt.resIter-1].score >= alpha);
+        assert(mIt.allResults[mIt.resIter-1].score <= bet);
+        assert(mIt.allResults[mIt.resIter-1].score >= alph);
         if (mIt.allResults[mIt.resIter-1].score >= bet){
             tt.addTTEntry(hash, depth, mIt.allResults[mIt.resIter-1].move, mIt.allResults[mIt.resIter-1].score, pl==PLACER, Cut_Node);
             return bet;                         //fail-hard beta cut-off
-        }//never with killer!
+        }
 
         if (mIt.allResults[mIt.resIter-1].score > alph){                   //better move found
             alph  = mIt.allResults[mIt.resIter-1].score;
             bmove = mIt.allResults[mIt.resIter-1].move;
+            assert(bmove >= 0);
         }
     }
     if(mainThread && threadsSpawned){
-        int failHardCuttoff = 0;
-        iter = 0;
-        while(mIt.allResults[iter].move != -1){
-            //if(pl==NORMAL)
-            while(mIt.allResults[iter].score == 0){
-                usleep(0.01);
-            }
+        // int failHardCuttoff = 0;
+        // iter = 0;
+        // while(mIt.allResults[iter].move != -1){
+        //     //if(pl==NORMAL)
+        //     while(mIt.allResults[iter].score == 0){
+        //         usleep(0.01);
+        //     }
 
-            if(!failHardCuttoff){
-                // if(depth == 9)
-                //     cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
-                if (mIt.allResults[iter].score >= bet){
-                    tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
-                    failHardCuttoff = iter+1;//fail-hard beta cut-off
-                } else if (mIt.allResults[iter].score > alph){                   //better move found
-                    alph  = mIt.allResults[iter].score;
-                    bmove = mIt.allResults[iter].move;
-                    assert(bmove >= 0);
-                }
-            }
-            iter++;
-        }
-        if(failHardCuttoff){
-            // iter = failHardCuttoff - 1;
-            // tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
-            return bet;
-        }
+        //     assert(mIt.allResults[iter].score <= beta);
+        //     assert(mIt.allResults[iter].score >= alpha);
+        //     assert(mIt.allResults[iter].score <= bet);
+        //     // assert(mIt.allResults[iter].score >= alph);
+        //     if(!failHardCuttoff){
+        //         // if(depth == 9)
+        //         //     cout << iter << " " << alpha << " " << beta << " " << depth << " " << pl << " " <<  mIt.allResults[iter].score << " " << hex << mIt.allResults[iter].move << dec << endl;
+        //         if (mIt.allResults[iter].score >= bet){
+        //             // tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
+        //             failHardCuttoff = iter+1;//fail-hard beta cut-off
+        //         } else if (mIt.allResults[iter].score > alph){                   //better move found
+        //             alph  = mIt.allResults[iter].score;
+        //             bmove = mIt.allResults[iter].move;
+        //             assert(bmove >= 0);
+        //         }
+        //     }
+        //     iter++;
+        // }
+        // if(failHardCuttoff){
+        //     iter = failHardCuttoff - 1;
+        //     tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
+        //     return bet;
+        // }
     }
     //Wait for threads to finish and merge scores here (?)
 
@@ -121,7 +138,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         assert(pl == NORMAL);
         ++horizonNodes;
         bool a;
-        return board.getHigherTile(&a) << 2;
+        return max(min((int32_t) (board.getHigherTile(&a) << 2), beta), alpha);
     }
 
     NodeType nt = PV__Node;
