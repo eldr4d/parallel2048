@@ -5,16 +5,22 @@
 #include "../Communication/Protocol.hpp"
 #include "../Board/BitBoard.hpp"
 #include "Search.hpp"
+#include <atomic>
 
 using namespace std;
 
 struct search_result{
-    int32_t score;
-    int32_t move;
-    bool threadSpawned;
+    std::atomic<int32_t> score;
+    std::atomic<int> move;
+    // std::atomic<bool> threadSpawned;
 };
 
-extern search_result allResults[16*2-2];
+struct tlocal_search_result{
+    int32_t score;
+    int     move;
+};
+
+extern search_result allResults[64][16*2-2];
 
 
 template<typename T, player pl, bool mainThread>
@@ -22,27 +28,26 @@ class MoveIterator_t{
     uint64 moves;
 public:
     //total squares * two possible moves for placer in the same square -2 for the always oqupied square
-    int32_t resIter;
+    // int32_t resIter;
 
 public:
     MoveIterator_t(const T &board);
 
-    void searchNextChild(T &board, int killer, int32_t depth, 
-                                int32_t alpha, int32_t beta, bool firstChild){
-        int move = -1;
+    tlocal_search_result searchNextChild(T &board, int killer, int32_t depth, 
+            int32_t alpha, int32_t beta, bool fChild, atomic<int32_t> *thr_score){
+        tlocal_search_result ret;
         if (pl == player::PLACER){ //if resolved by compiler based on template
             uint64 p;
             if (killer >= 0){
-                move = killer;
+                ret.move = killer;
 
                 p = uint64c(1) << killer;
                 assert(moves & p);
                 moves ^= p; //killer must be one in moves!
             } else {
                 if (!moves) {
-                    allResults[resIter].move = -1;
-                    resIter++;
-                    return;
+                    ret.move = -1;
+                    return ret;
                 }
 
                 p = pop_lsb(moves);
@@ -51,30 +56,29 @@ public:
                 // 4 | square
                 // square   : 0-15 board position tile was placed
                 // 4        : 0-1  1 when a 4-tile was placed, 0 otherwise
-                move = square(p);
+                ret.move = square(p);
             }
-            assert((board.getEmptyTiles() | (board.getEmptyTiles() << SQR_POP)) & (uint64c(1) <<  move));
-            assert(p == (uint64c(1) <<  move));
+            assert((board.getEmptyTiles() | (board.getEmptyTiles() << SQR_POP)) & (uint64c(1) <<  ret.move));
+            assert(p == (uint64c(1) <<  ret.move));
 
             //move is always valid! play it and return score
             board.makePlace(p);
             if(mainThread){
-                if(false && resIter >= 1 && depth > 5){ //!firstChild
-                    allResults[resIter].score = 0; //Thread spawned
-                    allResults[resIter].threadSpawned = true;
-                    spawnThread<player::NORMAL>(board, depth, alpha, beta, firstChild, &allResults[resIter].score);
+                if(true && !fChild && depth > 5){ //!firstChild
+                    *thr_score = 0;
+                    ret.move = -2 - ret.move;
+                    spawnThread<player::NORMAL>(board, depth, alpha, beta, fChild, thr_score);
                 }else{
-                    allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, firstChild);
-                    allResults[resIter].threadSpawned = false;
+                    ret.score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, fChild);
                 }
             }else{
-                allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, firstChild);
+                ret.score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, fChild);
             }
             board.undoPlace(p);
         } else {
             T bd2 = board;
             if (killer >  0){
-                move = killer;
+                ret.move = killer;
 
                 uint64 p = killer;
                 assert(moves & p);
@@ -86,34 +90,30 @@ public:
                     // 0 | - - - - 
                     //   | direction
                     // direction : 0001->left, 0010->up, 0100->right, 1000->down
-                    move = pop_lsb(moves);
-                    if (!move) {                //no move available, return
-                        allResults[resIter].move = -1;
-                        resIter++;
-                        return;
+                    ret.move = pop_lsb(moves);
+                    if (!ret.move){                 //no move available, return
+                        ret.move = -1;
+                        return ret;
                     }
-                } while(!bd2.tryMove(move));
+                } while(!bd2.tryMove(ret.move));
             }
             //move was valid! play it and return score
             // if(mainThread){
             //     if(true && !firstChild && depth > 7){
-            //         allResults[resIter].score = 0; //Thread spawned
-            //         allResults[resIter].threadSpawned = true;
-            //         spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[resIter].score);
+            //         allResults[depth][resIter].score = 0; //Thread spawned
+            //         allResults[depth][resIter].threadSpawned = true;
+            //         spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[depth][resIter].score);
             //     }else{
-            //         allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
-            //         allResults[resIter].threadSpawned = false;
+            //         allResults[depth][resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
+            //         allResults[depth][resIter].threadSpawned = false;
             //     }
             //     resIter++;
             // }else{
-                allResults[resIter].threadSpawned = false;
-                allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
+                ret.score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, fChild);
                 // resIter++;
             // }
         }
-        allResults[resIter].move = move;
-        resIter++;
-        assert(resIter < 16*2-2);
+        return ret;
     }
 
 };
@@ -127,7 +127,7 @@ MoveIterator_t<T, pl, mainThread>::MoveIterator_t(const T &board){
     } else {
         moves = 0xF;
     }
-    resIter = 0;
+    // resIter = 0;
 }
 
 #endif /* _MOVEITERATOR_HPP */

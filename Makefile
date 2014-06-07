@@ -13,9 +13,11 @@ SRC_CLN = Communication/Client-comm.cpp Client.cpp NegaScout/Search.cpp
 
 parallel:CXXFLAGS += -DPARALLELIMPL=true
 single:CXXFLAGS += -DPARALLELIMPL=false
+compare:CXXFLAGS += -DCOMPARE
 
 parallel:clean all
 single:clean all
+compare:clean all
 
 all:client server
 

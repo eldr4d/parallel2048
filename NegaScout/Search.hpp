@@ -5,6 +5,7 @@
 #include "TranspositionTable.hpp"
 #include "../Board/BitBoard.hpp"
 #include "../ThreadPool/ThreadPool.hpp"
+#include <atomic>
 
 using namespace std;
 
@@ -15,7 +16,7 @@ typedef struct{
     int32_t alpha, beta, depth;
     BitBoard_t board;
     bool firstChild;
-    int32_t *writeResult;
+    atomic<int32_t> *writeResult;
 }maskedArguments;
 
 
