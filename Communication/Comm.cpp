@@ -33,7 +33,7 @@ void init_sockaddr (struct sockaddr_in *name, const char *hostname,
     name->sin_port = htons (port);
     
     /* If hostname is not defined, assume the server is on my machine */
-    if (hostname == NULL || hostname[0] == NULL)
+    if (hostname == NULL || !(hostname[0]))
         hostinfo = gethostbyname ("localhost");
     else 
         hostinfo = gethostbyname (hostname);

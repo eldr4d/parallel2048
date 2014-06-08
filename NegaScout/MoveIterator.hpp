@@ -10,9 +10,8 @@
 using namespace std;
 
 struct search_result{
-    std::atomic<int32_t> score;
-    std::atomic<int> move;
-    // std::atomic<bool> threadSpawned;
+    std::atomic<int32_t>    score;
+    std::atomic<int>        move;
 };
 
 struct tlocal_search_result{
@@ -26,9 +25,6 @@ extern search_result allResults[64][16*2-2];
 template<typename T, player pl, bool mainThread>
 class MoveIterator_t{
     uint64 moves;
-public:
-    //total squares * two possible moves for placer in the same square -2 for the always oqupied square
-    // int32_t resIter;
 
 public:
     MoveIterator_t(const T &board);
@@ -63,14 +59,10 @@ public:
 
             //move is always valid! play it and return score
             board.makePlace(p);
-            if(mainThread){
-                if(true && !fChild && depth > 5){ //!firstChild
-                    *thr_score = 0;
-                    ret.move = -2 - ret.move;
-                    spawnThread<player::NORMAL>(board, depth, alpha, beta, fChild, thr_score);
-                }else{
-                    ret.score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, fChild);
-                }
+            if(mainThread && !fChild && depth > 4){
+                *thr_score = 0;
+                ret.move = -2 - ret.move;
+                spawnThread<player::NORMAL>(board, depth, alpha, beta, fChild, thr_score);
             }else{
                 ret.score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, fChild);
             }
@@ -98,14 +90,10 @@ public:
                 } while(!bd2.tryMove(ret.move));
             }
             //move was valid! play it and return score
-            if(mainThread){
-                if(true && !fChild && depth > 5){ //!firstChild
-                    *thr_score = 0;
-                    ret.move = -2 - ret.move;
-                    spawnThread<player::PLACER>(bd2, depth, alpha, beta, fChild, thr_score);
-                }else{
-                    ret.score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, fChild);
-                }
+            if(mainThread && !fChild && depth > 4){
+                *thr_score = 0;
+                ret.move = -2 - ret.move;
+                spawnThread<player::PLACER>(bd2, depth, alpha, beta, fChild, thr_score);
             }else{
                 ret.score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, fChild);
             }
@@ -124,7 +112,6 @@ MoveIterator_t<T, pl, mainThread>::MoveIterator_t(const T &board){
     } else {
         moves = 0xF;
     }
-    // resIter = 0;
 }
 
 #endif /* _MOVEITERATOR_HPP */

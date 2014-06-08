@@ -19,9 +19,6 @@ typedef struct{
     atomic<int32_t> *writeResult;
 }maskedArguments;
 
-
-
-
 template<player other>
 void spawnThread(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild, int32_t *score);
 

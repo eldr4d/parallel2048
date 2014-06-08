@@ -7,8 +7,6 @@
 #include "NegaScout/Search.hpp"
 #include <atomic>
 
-//#define NDEBUG
-
 using namespace std;
 
 TranspositionTable tt;
@@ -63,33 +61,10 @@ void GetUserMove (int *dir)
     }
 }
 
-int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
-    bool inCorner = false;
-	int32_t v2 = boardForEv.getHigherTile(&inCorner);
-    int32_t score = (v2 << 6) + 1;
-	if(inCorner){
-        score += boardForEv.getMaxCornerChain() << 5;
-		score <<= 2;
-	}
-    score += boardForEv.getMaxChain() << 4;
-    int tmp = boardForEv.countFreeTiles() - 7;
-    tmp = (tmp < 0) ? -tmp : tmp;
-    score += (7-tmp) << 2;
-    score += boardForEv.countTileTypes() << 2;
-    assert(score >= 0);
-	return score;
-}         
-
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
 
     int32_t depth = 10;
-
-    maskedArguments args;
-    args.alpha = -(numeric_limits<int32_t>::max()-100000);
-    args.beta = (numeric_limits<int32_t>::max()-100000);
-    args.depth = depth;
-    args.board = board;
 
     horizonNodes = 0;
     totalNodes   = 0;
@@ -103,44 +78,14 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 	double totalSeconds = 0.2;
     do{
 		start = std::chrono::system_clock::now();
-		atomic<int32_t> bestcost(-99999);
+		int32_t bestcost(-99999);
 
-        // args.writeResult = &bestcost;
         tt.preparePVposition(board);
 		if(pl == NORMAL){
-            //args.pl = NORMAL;
-            //args.color = true;
-            //myThreadPool.useNewThread(args);
-            //while(bestcost == -99999)
-            //    usleep(10);
-            move->dir = 1000;//10:2628 6892 //32972
-#ifdef COMPARE
-            cout << "-----------------------------------------------------------parallel-----------------------------------------------------------" << endl;
-            tt.flush();
-            int32_t bestcost1 = negaScout<NORMAL, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
-            cout << "info";
-            cout << " score " << bestcost1 << endl;
-            cout << "----------------------------------------------------------- serial -----------------------------------------------------------" << endl;
-            tt.flush();
-            int32_t bestcost2 = negaScout<NORMAL, false>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
-            cout << "info";
-            cout << " score " << bestcost2 << endl;
-            cout << "-----------------------------------------------------------  next  -----------------------------------------------------------" << endl;
-            if (bestcost2 == bestcost1){
-                bestcost = bestcost1;
-            } else {
-                exit(-1);
-            }
-#else
+            move->dir = 1000;                                                       //TODO REMOVE
+
 			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
-#endif
 		}else{
-            // args.pl = PLACER;
-            // args.color = false;
-            // myThreadPool.useNewThread(args);
-            // while(bestcost == -99999)
-            //     usleep(10);
-            // bestcost = -bestcost;
 			bestcost = -negaScout<PLACER, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
         }
         tt.extractBest(board, pl, move);
@@ -152,7 +97,9 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         cout << " time "  << chrono::duration_cast<chrono::milliseconds>(
                                     chrono::system_clock::now() - glob_start
                                 ).count();
+#ifndef NDEBUG
         cout << " nodes " << totalNodes;
+#endif
         cout << " pv "    << tt.extractPV(board, pl, 120);
         cout << endl;
         //end of info message
@@ -162,9 +109,6 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         totalSeconds -= elapsed_seconds.count();
 		depth++;
     }while(totalSeconds>0 && depth < 60);
-    char ch;
-    //cin >> ch;
-
 
     return 0;
 }

@@ -105,10 +105,8 @@ public:
                 alpha   = sc;
                 beta    = sc;
             }
-        } else {
-            if (bs == All_Node){
-                return NULL_MOVE;
-            }
+        } else if (bs == All_Node){
+            return NULL_MOVE;
         }
         assert(placer || ((ndata >> tte_shft_killer) & tte_mask_killer));
         return (ndata >> tte_shft_killer) & tte_mask_killer;
@@ -175,7 +173,7 @@ public:
         tthash hash = board.getHash();
         int index = getTTIndex(hash);
 
-        ttEntry * entr = mem + index;
+        ttEntry * entr  = mem + index;
 
         tthash hashXD   = entr->hashXORdata;
         ttdata data     = entr->data;
@@ -195,7 +193,7 @@ public:
         tthash hashXD   = entr->hashXORdata;
         ttdata data     = entr->data;
 
-        if ((hashXD ^ data) != hash) {
+        if ((hashXD ^ data) != hash || !data) {
             assert(false);
             return false;
         }
