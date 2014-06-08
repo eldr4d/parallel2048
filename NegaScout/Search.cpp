@@ -10,12 +10,12 @@ search_result allResults[64][16*2-2];
 
 template<player pl, bool mainThread>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
-    ++totalNodes;
+    // ++totalNodes;
     player other = getOtherPlayer(pl);
 
     //An ftasame sta katw katw fyla tote gyrname thn katastash
     if(depth == 0){
-        ++horizonNodes;
+        // ++horizonNodes;
         int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
         temp = (pl == NORMAL) ? temp : -temp;
         return temp;
@@ -146,7 +146,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
     if (firstChild){ //no move was available, this is a leaf node, return score
         board.assert_state();
         assert(pl == NORMAL);
-        ++horizonNodes;
+        // ++horizonNodes;
         bool a;
         return board.getHigherTile(&a) << 2;
     }
@@ -169,7 +169,7 @@ int32_t search_deeper(BitBoard_t &board, int32_t depth, int32_t alpha,
     } else {
         score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha, firstChild);
         if(alpha < score){
-            score = -negaScout<other, mainThread>(board, depth, -beta, -alpha,firstChild);
+            score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
         }
     }
     return score;

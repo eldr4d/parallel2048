@@ -98,20 +98,17 @@ public:
                 } while(!bd2.tryMove(ret.move));
             }
             //move was valid! play it and return score
-            // if(mainThread){
-            //     if(true && !firstChild && depth > 7){
-            //         allResults[depth][resIter].score = 0; //Thread spawned
-            //         allResults[depth][resIter].threadSpawned = true;
-            //         spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[depth][resIter].score);
-            //     }else{
-            //         allResults[depth][resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
-            //         allResults[depth][resIter].threadSpawned = false;
-            //     }
-            //     resIter++;
-            // }else{
+            if(mainThread){
+                if(true && !fChild && depth > 5){ //!firstChild
+                    *thr_score = 0;
+                    ret.move = -2 - ret.move;
+                    spawnThread<player::PLACER>(bd2, depth, alpha, beta, fChild, thr_score);
+                }else{
+                    ret.score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, fChild);
+                }
+            }else{
                 ret.score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, fChild);
-                // resIter++;
-            // }
+            }
         }
         return ret;
     }
