@@ -25,6 +25,9 @@ struct ttEntry{
 #define tte_bits_killer (5)
 #define tte_bits_sscore (tte_sz-tte_bits_killer-tte_bits_sstate-tte_bits_sdepth)
 
+#define MAX_TT_SCORE    (((1 << (tte_bits_sscore-1)))-1)
+#define MIN_TT_SCORE    ((-(1 << (tte_bits_sscore-1))) )
+
 #define tte_shft_sstate (0)
 #define tte_shft_sdepth (tte_bits_sstate)
 #define tte_shft_killer (tte_bits_sstate + tte_bits_sdepth)
@@ -58,13 +61,17 @@ private:
     ttEntry mem[TRANSPOSITION_TABLE_SIZE];
 
 public:
-    TranspositionTable(){
-        assert(sizeof(ttdata) == 8);
-        assert(sizeof(hdata)  == 4);
+    inline void flush(){
         for (int i = 0 ; i < TRANSPOSITION_TABLE_SIZE ; ++i){
             mem[i].hashXORdata = 0;
             mem[i].data        = 0;
         }
+    }
+
+    TranspositionTable(){
+        assert(sizeof(ttdata) == 8);
+        assert(sizeof(hdata)  == 4);
+        flush();
     }
 
     inline int retrieveTTEntry(tthash hash, unsigned int depth, 
@@ -166,7 +173,7 @@ public:
         tthash hash = board.getHash();
         int index = getTTIndex(hash);
 
-        ttEntry * entr = mem + index;
+        ttEntry * entr  = mem + index;
 
         tthash hashXD   = entr->hashXORdata;
         ttdata data     = entr->data;
@@ -186,7 +193,7 @@ public:
         tthash hashXD   = entr->hashXORdata;
         ttdata data     = entr->data;
 
-        if ((hashXD ^ data) != hash) {
+        if ((hashXD ^ data) != hash || !data) {
             assert(false);
             return false;
         }

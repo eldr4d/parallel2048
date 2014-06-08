@@ -12,14 +12,6 @@ enum Status {
     ABORT,
 };
 
-// enum Directions { //DO NOT CHANGE VALUES!!!
-//     LEFT = 0,
-//     DOWN = 1,
-//     RIGHT = 2,
-//     UP = 3,
-//     DIR_SIZE,
-// };
-
 typedef BitBoard<4u> BitBoard_t;
 
 typedef struct {

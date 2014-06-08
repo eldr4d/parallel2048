@@ -15,6 +15,7 @@ TFLAGS+= -funroll-loops
 # TFLAGS+= -fwhole-program
 # TFLAGS+= -flto
 TFLAGS+= -DNDEBUG
+TFLAGS+= -DPARALLELIMPL=true
 
 LDFLAGS =  -lnsl 
 
@@ -31,6 +32,14 @@ OBJ_CLN = $(SRC_CLN:.cpp=.o)
 release: CXXFLAGS += $(TFLAGS)
 
 CXXFLAGS += $(LDFLAGS)
+
+parallel:CXXFLAGS += -DPARALLELIMPL=true
+single:CXXFLAGS += -DPARALLELIMPL=false
+compare:CXXFLAGS += -DCOMPARE
+
+parallel:clean all
+single:clean all
+compare:clean all
 
 all:client server
 
@@ -86,16 +95,19 @@ Client.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
 Client.o: /usr/include/rpc/netdb.h /usr/include/unistd.h
 Client.o: /usr/include/getopt.h /usr/include/arpa/inet.h
 Client.o: /usr/include/string.h Communication/Protocol.hpp Board/BitBoard.hpp
-Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
-Client.o: /usr/include/_G_config.h /usr/include/wchar.h
 Client.o: NegaScout/MoveIterator.hpp NegaScout/Search.hpp
 Client.o: Communication/Client-comm.hpp NegaScout/TranspositionTable.hpp
-Client.o: NegaScout/Search.hpp
+Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
+Client.o: /usr/include/_G_config.h /usr/include/wchar.h NegaScout/Search.hpp
 NegaScout/Search.o: NegaScout/Search.hpp Communication/Client-comm.hpp
 NegaScout/Search.o: NegaScout/TranspositionTable.hpp Board/BitBoard.hpp
 NegaScout/Search.o: Board/BitUtils.hpp Definitions.hpp
-NegaScout/Search.o: NegaScout/MoveIterator.hpp Board/BitUtils.hpp
-NegaScout/Search.o: Communication/Protocol.hpp
+NegaScout/Search.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h
+NegaScout/Search.o: /usr/include/features.h /usr/include/stdc-predef.h
+NegaScout/Search.o: /usr/include/libio.h /usr/include/_G_config.h
+NegaScout/Search.o: /usr/include/wchar.h /usr/include/unistd.h
+NegaScout/Search.o: /usr/include/getopt.h NegaScout/MoveIterator.hpp
+NegaScout/Search.o: Board/BitUtils.hpp Communication/Protocol.hpp
 Board/BitBoard.o: Board/BitBoard.hpp Board/BitUtils.hpp Definitions.hpp
 Board/BitUtils.o: Board/BitUtils.hpp
 Utils.o: Communication/Protocol.hpp Definitions.hpp Board/BitBoard.hpp

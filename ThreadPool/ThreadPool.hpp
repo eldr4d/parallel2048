@@ -14,7 +14,6 @@
 template<typename dataStruct> class  ThreadPool{
 private:
 	int numberOfThreads;
-	int freeThreads;
 	std::vector<std::thread> threads;
 	std::mutex resourcesMutex;
 	std::condition_variable newJobCv; //Not the cv that we send to a university:P
@@ -22,7 +21,7 @@ private:
 	std::queue<dataStruct> resourcesForEachThread;
 
 public:
-	ThreadPool(int numOfThreads, void (*func)(dataStruct)):numberOfThreads(numOfThreads),timeToDie(false),freeThreads(0){
+	ThreadPool(int numOfThreads, void (*func)(dataStruct)):numberOfThreads(numOfThreads),timeToDie(false){
 		threads.resize(numberOfThreads);
 		for(int i=0; i<numOfThreads; i++){
 			threads[i] = std::thread(&ThreadPool::genericThreadFunc, this, func);
@@ -33,7 +32,7 @@ public:
 		{
     		std::unique_lock<std::mutex> mutexLock(resourcesMutex);
     		timeToDie = true;
-    		newJobCv.notify_one();
+    		newJobCv.notify_all();
 		}
 		for(unsigned int i=0; i<threads.size(); i++){
 			threads[i].join();
@@ -52,7 +51,7 @@ public:
     		std::unique_lock<std::mutex> mutexLock(resourcesMutex);
     		resourcesForEachThread.push(data);
     		newJobCv.notify_all();
-		};
+		}
 	}
 
 	void genericThreadFunc(void (*f)(dataStruct)){
@@ -60,9 +59,8 @@ public:
 			dataStruct dataForFunc;
 	    	{
 	    		std::unique_lock<std::mutex> mutexLock(resourcesMutex);
-	    		freeThreads++;
 	    		if(resourcesForEachThread.empty()){
-		 			if(newJobCv.wait_for(mutexLock, std::chrono::milliseconds(100)) == std::cv_status::timeout){
+		 			if(newJobCv.wait_for(mutexLock, std::chrono::milliseconds(1)) == std::cv_status::timeout){
 						if(timeToDie == true){
 							std::cout << "Thread terminating: " << std::this_thread::get_id() << std::endl;
 							break;
@@ -73,7 +71,6 @@ public:
 						continue;
 					}
 				}
-				freeThreads--;
 				dataForFunc = resourcesForEachThread.front();
 				resourcesForEachThread.pop();
 			}

@@ -4,73 +4,120 @@
 
 using namespace std;
 
-template<player pl>
-int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta){
+ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
+
+search_result allResults[64][16*2-2];
+
+template<player pl, bool mainThread>
+int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
+#ifndef NDEBUG
     ++totalNodes;
-    
+#endif
+
     //An ftasame sta katw katw fyla tote gyrname thn katastash
     if(depth == 0){
+#ifndef NDEBUG
         ++horizonNodes;
+#endif
         int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
         temp = (pl == NORMAL) ? temp : -temp;
         return temp;
     }
 
     uint64 hash = board.getHash();
-    //alpha beta are passed by reference!!!
-    int kiMove = tt.retrieveTTEntry(hash, depth, alpha, beta, pl == PLACER);
-    if (alpha >= beta) {
-        // statistics(++hashHitCutOff);
-        return alpha;
-    }
-    int bmove = -1;
 
     int32_t alph = alpha, bet = beta;
+    //alpha beta are passed by reference!!!
+    int kiMove = tt.retrieveTTEntry(hash, depth, alph, bet, pl == PLACER);
+    if (alph >= bet) {
+        return alph;
+    }
+
+    int bmove = -1;
+
     bool firstChild = true;
 
-    MoveIterator_t<BitBoard_t, pl> mIt(board);
+    MoveIterator_t<BitBoard_t, pl, mainThread> mIt(board);
 
-    search_result sr;
+    int iter = 0;
     while(true) {
-        sr = mIt.searchNextChild(board, kiMove, depth-1, alph, bet, firstChild);
+        tlocal_search_result tmp_r = mIt.searchNextChild(board, kiMove, 
+            depth-1, alph, bet, firstChild, &(allResults[depth][iter].score));
         kiMove = -1;
-        //sr.move == -1 signals that no more moves exists, no move was played
-        //if (sr.move == -1) break;                 //equivalent
-        if (sr.move < 0) break;                     //and rt.score is invalid
-        //sr.move is always non-negative if a valid move was played
+        if (tmp_r.move == -1) break;                //and rt.score is invalid
 
         firstChild = false; //set this here
+        if(mainThread){//Template if
+            if(tmp_r.move < 0) {
+                allResults[depth][iter].move  = -(2+tmp_r.move);
+                ++iter;
+                continue;
+            }
+        }
+        //tmp_r.move is always non-negative if a valid move was played
+
         //Setting firstChild here permits skipping the rest of current iteration
         //if score must be ignored for now
 
         //possible set a continue here such that if a new thread is used for
         //subtree search, to skip score checking ? 
-        //if (sr.move < -1) continue;
+        //if (tmp_r.move < -1) continue;
 
         //move played!
-        if (sr.score >= bet){
-            tt.addTTEntry(hash, depth, sr.move, sr.score, pl==PLACER, Cut_Node);
-            return bet;                         //fail-hard beta cut-off
+
+        if (tmp_r.score >= bet){
+            tt.addTTEntry(hash, depth, tmp_r.move, tmp_r.score, pl==PLACER, Cut_Node);
+            return bet;                                 //fail-hard beta cut-off
         }
 
-        if (sr.score > alph){                   //better move found
-            alph  = sr.score;
-            bmove = sr.move;
+        if (tmp_r.score > alph){                        //better move found
+            alph  = tmp_r.score;
+            bmove = tmp_r.move;
+            assert(bmove >= 0);
         }
     }
 
-    //Wait for threads to finish and merge scores here (?)
+    //Wait for threads to finish and merge scores here
+    if(mainThread){
+        for (int i = 0; i < iter; ++i){
+            while(allResults[depth][i].score == 0){
+                this_thread::yield();
+            }
+            tlocal_search_result tmp_r;
+
+            tmp_r.score = allResults[depth][i].score;
+            tmp_r.move  = allResults[depth][i].move;
+
+            if (tmp_r.score >= bet){
+                for (int j = i+1 ; j < iter ; ++j){
+                    while(allResults[depth][j].score == 0){
+                        this_thread::yield();
+                    }
+                }
+                tt.addTTEntry(hash, depth, tmp_r.move, tmp_r.score, pl==PLACER, Cut_Node);
+                return bet;                             //fail-hard beta cut-off
+            }
+
+            if (tmp_r.score > alph){                    //better move found
+                alph  = tmp_r.score;
+                bmove = tmp_r.move;
+                assert(bmove >= 0);
+            }
+        }
+    }
 
     if (firstChild){ //no move was available, this is a leaf node, return score
         board.assert_state();
         assert(pl == NORMAL);
+#ifndef NDEBUG
         ++horizonNodes;
+#endif
         bool a;
         return board.getHigherTile(&a) << 2;
     }
 
     NodeType nt = PV__Node;
-    if (bmove < 0){ //All-Node
+    if (bmove < 0){                                     //All-Node
         nt    = All_Node;
         bmove = 0;
     }
@@ -78,22 +125,69 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta)
     return alph;
 }
 
-template<player other>
+template<player other, bool mainThread>
 int32_t search_deeper(BitBoard_t &board, int32_t depth, int32_t alpha, 
                                                 int32_t beta, bool firstChild){
     int32_t score;
     if(firstChild == true){
-        score = -negaScout<other>(board, depth, -beta, -alpha);
+        score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
     } else {
-        score = -negaScout<other>(board, depth, -alpha-1, -alpha);
+        score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha, firstChild);
         if(alpha < score){
-            score = -negaScout<other>(board, depth, -beta, -score);
+            score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
         }
     }
     return score;
 }
 
-template int32_t negaScout<player::PLACER>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
-template int32_t negaScout<player::NORMAL>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
-template int32_t search_deeper<player::PLACER>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
-template int32_t search_deeper<player::NORMAL>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
+void negaScoutWrapper(maskedArguments args){
+    int32_t data;
+    if (args.pl == player::PLACER){
+        data = search_deeper<player::PLACER,false>(args.board, args.depth, args.alpha, args.beta, args.firstChild);
+    } else {
+        data = search_deeper<player::NORMAL,false>(args.board, args.depth, args.alpha, args.beta, args.firstChild);
+    }
+    assert(data!=0);
+    *(args.writeResult) = data;
+}
+
+
+template<player other>
+void spawnThread(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild, atomic<int32_t> *score){
+    maskedArguments args;
+    args.pl = other;
+    args.alpha = alpha;
+    args.beta = beta;
+    args.depth = depth;
+    args.board = board;
+    args.firstChild = firstChild;
+    args.writeResult = score;
+
+    myThreadPool.useNewThread(args);
+}
+
+int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
+    bool inCorner = false;
+    int32_t v2 = boardForEv.getHigherTile(&inCorner);
+    int32_t score = (v2 << 6) + 1;
+    if(inCorner){
+        score += boardForEv.getMaxCornerChain() << 5;
+        score <<= 2;
+    }
+    score += boardForEv.getMaxChain() << 4;
+    int tmp = boardForEv.countFreeTiles() - 7;
+    tmp = (tmp < 0) ? -tmp : tmp;
+    score += (7-tmp) << 2;
+    score += boardForEv.countTileTypes() << 2;
+    assert(score >= 0);
+    return score;
+}
+
+template int32_t negaScout<player::PLACER, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
+template int32_t negaScout<player::NORMAL, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
+template int32_t negaScout<player::PLACER, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
+template int32_t negaScout<player::NORMAL, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
+template int32_t search_deeper<player::PLACER, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
+template int32_t search_deeper<player::NORMAL, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
+template int32_t search_deeper<player::PLACER, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
+template int32_t search_deeper<player::NORMAL, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);

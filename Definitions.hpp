@@ -2,11 +2,12 @@
 #define _DEFINITIONS_HPP
 
 #include <thread>
+#include <atomic>
 
 using namespace std;
 
 
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS (16)
 
 typedef struct{
     int dir;
@@ -18,8 +19,8 @@ enum player{
     PLACER,
 };
 
-extern uint64_t horizonNodes;
-extern uint64_t totalNodes;
+extern std::atomic<uint64_t> horizonNodes;
+extern std::atomic<uint64_t> totalNodes;
 
 constexpr player getOtherPlayer(player pl) {
     return (player) (pl ^ 1); //== PLACER ? NORMAL : PLACER;

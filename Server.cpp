@@ -258,7 +258,7 @@ int calculateScore(int tile){
 
 int main (int argc, char *argv[])
 {
-    srand(time(NULL) % (1 << 24));
+    //srand(time(NULL) % (1 << 24));
     
     int sock, clnt_sock[2];
     double time_left[2], time_limit;

@@ -3,38 +3,17 @@
 #include "Board/BitBoard.hpp"
 #include <chrono>
 #include <ctime>
-#include "ThreadPool/ThreadPool.hpp"
 #include "NegaScout/MoveIterator.hpp"
 #include "NegaScout/Search.hpp"
-//#define NDEBUG
+#include <atomic>
 
 using namespace std;
 
 TranspositionTable tt;
 BitBoard_t board;
 
-uint64_t horizonNodes;
-uint64_t totalNodes;
-
-typedef struct{
-    player pl;
-    int32_t alpha, beta, depth;
-    BitBoard_t board;
-    Move *move;
-    int32_t *writeResult;
-}maskedArguments;
-
-void negaScoutWrapper(maskedArguments args){
-    int32_t data;
-    if (args.pl == player::PLACER){
-        data = negaScout<player::PLACER>(args.board, args.depth, args.alpha, args.beta);
-    } else {
-        data = negaScout<player::NORMAL>(args.board, args.depth, args.alpha, args.beta);
-    }
-    *(args.writeResult) = data;
-}
-
-ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
+std::atomic<uint64_t> horizonNodes;
+std::atomic<uint64_t> totalNodes;
 
 int GetSide(int argc, char *argv[])
 {
@@ -82,35 +61,11 @@ void GetUserMove (int *dir)
     }
 }
 
-int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
-    bool inCorner = false;
-	int32_t v2 = boardForEv.getHigherTile(&inCorner);
-    int32_t score = (v2 << 6) + 1;
-	if(inCorner){
-        score += boardForEv.getMaxCornerChain() << 5;
-		score <<= 2;
-	}
-    score += boardForEv.getMaxChain() << 4;
-    int tmp = boardForEv.countFreeTiles() - 7;
-    tmp = (tmp < 0) ? -tmp : tmp;
-    score += (7-tmp) << 2;
-    score += boardForEv.countTileTypes() << 1;
-    assert(score >= 0);
-	return score;
-}         
-
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
 
-    int32_t depth = 7;
+    int32_t depth = 10;
 
-    maskedArguments args;
-    args.alpha = -(numeric_limits<int32_t>::max()-100000);
-    args.beta = (numeric_limits<int32_t>::max()-100000);
-    args.depth = depth;
-    args.board = board;
-    args.move = move;
-    
     horizonNodes = 0;
     totalNodes   = 0;
 
@@ -123,26 +78,15 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 	double totalSeconds = 0.2;
     do{
 		start = std::chrono::system_clock::now();
-		int32_t bestcost = -99999;
+		int32_t bestcost(-99999);
 
-        args.writeResult = &bestcost;
         tt.preparePVposition(board);
 		if(pl == NORMAL){
-            //args.pl = NORMAL;
-            //args.color = true;
-            //myThreadPool.useNewThread(args);
-            //while(bestcost == -99999)
-            //    usleep(10);
-            move->dir = 1000;
-			bestcost = negaScout<NORMAL>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000);
+            move->dir = 1000;                                                       //TODO REMOVE
+
+			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
 		}else{
-            // args.pl = PLACER;
-            // args.color = false;
-            // myThreadPool.useNewThread(args);
-            // while(bestcost == -99999)
-            //     usleep(10);
-            // bestcost = -bestcost;
-			bestcost = -negaScout<PLACER>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000));
+			bestcost = -negaScout<PLACER, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
         }
         tt.extractBest(board, pl, move);
 
@@ -153,7 +97,9 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         cout << " time "  << chrono::duration_cast<chrono::milliseconds>(
                                     chrono::system_clock::now() - glob_start
                                 ).count();
+#ifndef NDEBUG
         cout << " nodes " << totalNodes;
+#endif
         cout << " pv "    << tt.extractPV(board, pl, 120);
         cout << endl;
         //end of info message
@@ -163,7 +109,6 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         totalSeconds -= elapsed_seconds.count();
 		depth++;
     }while(totalSeconds>0 && depth < 60);
-
 
     return 0;
 }
@@ -203,10 +148,17 @@ int main (int argc, char *argv[])
         while (msg.status != GAME_ENDED && msg.status != ABORT) {
 
 			if(side == PLACER){
-				ptile c = board.placeRandom();
-               	cout << board << endl;
-		       	SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
-				cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;
+				/*ptile c = board.placeRandom();
+                cout << board << endl;
+                SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
+                cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;*/
+                uint64 f = board.getEmptyTiles();
+                f = pop_lsb(f);
+                board.makePlace(f);
+                Move m;
+                BitBoard_t::intToMove(&m, (int) square(f), PLACER);
+                SendPlacerAndGetNormalMove (socket, m.row, m.col, m.v, &msg);
+                cout << "My move is " << m.row << "," << m.col << " v = " << (1 << m.v) << endl << endl;
 		       	/*
 				Move move;
 				ExploreTree(board, &move, PLACER);
