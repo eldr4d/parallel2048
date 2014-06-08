@@ -249,6 +249,7 @@ void BitBoard<state_size>::intToMove(Move *m, int bmove, player pl){
     } else {
         m->dir = bmove;
         m->row = -1;
+        assert(!(m->dir & (m->dir-1)));
     }
 }
 

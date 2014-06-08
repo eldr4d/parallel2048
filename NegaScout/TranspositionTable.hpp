@@ -25,8 +25,8 @@ struct ttEntry{
 #define tte_bits_killer (5)
 #define tte_bits_sscore (tte_sz-tte_bits_killer-tte_bits_sstate-tte_bits_sdepth)
 
-#define MAX_TT_SCORE    (((1 << (tte_bits_sscore-1)))-1)
-#define MIN_TT_SCORE    ((-(1 << (tte_bits_sscore-1))) )
+#define MAX_TT_SCORE    (( (1 << (tte_bits_sscore-1)))-2)
+#define MIN_TT_SCORE    ((-(1 << (tte_bits_sscore-1)))+1)
 
 #define tte_shft_sstate (0)
 #define tte_shft_sdepth (tte_bits_sstate)

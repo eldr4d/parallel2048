@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -pthread -Wall -march=native -Wl,--no-as-needed
+CXXFLAGS = -std=c++11 -pthread -Wall -march=native -Wl,--no-as-needed -g3 
 
 TFLAGS = -O3
 TFLAGS+= -finline 

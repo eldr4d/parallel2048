@@ -79,6 +79,8 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
     do{
 		start = std::chrono::system_clock::now();
 		int32_t bestcost(-99999);
+        galpha_pl = MIN_TT_SCORE+1;
+        gbeta__pl = MAX_TT_SCORE-1;
 
         tt.preparePVposition(board);
 		if(pl == NORMAL){

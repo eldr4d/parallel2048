@@ -8,6 +8,9 @@ ThreadPool<maskedArguments> myThreadPool(NUM_OF_THREADS,&negaScoutWrapper);
 
 search_result allResults[64][16*2-2];
 
+atomic<int32_t> galpha_pl;
+atomic<int32_t> gbeta__pl;
+
 template<player pl, bool mainThread>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
 #ifndef NDEBUG
@@ -39,6 +42,16 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
 
     MoveIterator_t<BitBoard_t, pl, mainThread> mIt(board);
 
+    if (mainThread){
+        // if (pl == NORMAL){
+            galpha_pl = +alph;
+            gbeta__pl = (int) pl;
+        // } else {
+        //     galpha_pl = +MIN_TT_SCORE ;
+        //     gbeta__pl = -alph;
+        // }
+    }
+
     int iter = 0;
     while(true) {
         tlocal_search_result tmp_r = mIt.searchNextChild(board, kiMove, 
@@ -69,8 +82,19 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
             tt.addTTEntry(hash, depth, tmp_r.move, tmp_r.score, pl==PLACER, Cut_Node);
             return bet;                                 //fail-hard beta cut-off
         }
+        if ((!mainThread) && ((int) pl) != gbeta__pl && tmp_r.score >= -galpha_pl){
+        // if ((!mainThread) && tmp_r.score >= ((pl == NORMAL) ? (int32_t) gbeta__pl : -galpha_pl)){
+            return -galpha_pl;//((pl == NORMAL) ? (int32_t) gbeta__pl : -galpha_pl);//MAX_TT_SCORE;
+        }
 
         if (tmp_r.score > alph){                        //better move found
+            if (mainThread){
+                // if (pl == NORMAL){
+                    galpha_pl = +tmp_r.score;
+                // } else {
+                //     gbeta__pl = -tmp_r.score;
+                // }
+            }
             alph  = tmp_r.score;
             bmove = tmp_r.move;
             assert(bmove >= 0);
@@ -79,31 +103,43 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
 
     //Wait for threads to finish and merge scores here
     if(mainThread){
-        for (int i = 0; i < iter; ++i){
-            while(allResults[depth][i].score == 0){
-                this_thread::yield();
-            }
-            tlocal_search_result tmp_r;
+        bool unfinished = false;
+        do {
+            unfinished = false;
+            for (int i = 0 ; i < iter ; ++i){
+                if (allResults[depth][i].score == 0) {
+                    unfinished = true;
+                    continue;
+                } else if (allResults[depth][i].move >= 0){
+                    tlocal_search_result tmp_r;
 
-            tmp_r.score = allResults[depth][i].score;
-            tmp_r.move  = allResults[depth][i].move;
+                    tmp_r.score = allResults[depth][i].score;
+                    tmp_r.move  = allResults[depth][i].move;
+                    allResults[depth][i].move = -5;
 
-            if (tmp_r.score >= bet){
-                for (int j = i+1 ; j < iter ; ++j){
-                    while(allResults[depth][j].score == 0){
-                        this_thread::yield();
+                    if (tmp_r.score >= bet){
+                        for (int j = 0 ; j < iter ; ++j){
+                            while(allResults[depth][j].score == 0 && allResults[depth][j].move >= 0){
+                                this_thread::yield();
+                            }
+                        }
+                        tt.addTTEntry(hash, depth, tmp_r.move, tmp_r.score, pl==PLACER, Cut_Node);
+                        return bet;                             //fail-hard beta cut-off
+                    }
+
+                    if (tmp_r.score > alph){                    //better move found
+                        // if (pl == NORMAL){
+                            galpha_pl = +tmp_r.score;
+                        // } else {
+                        //     gbeta__pl = -tmp_r.score;
+                        // }
+                        alph  = tmp_r.score;
+                        bmove = tmp_r.move;
+                        assert(bmove >= 0);
                     }
                 }
-                tt.addTTEntry(hash, depth, tmp_r.move, tmp_r.score, pl==PLACER, Cut_Node);
-                return bet;                             //fail-hard beta cut-off
             }
-
-            if (tmp_r.score > alph){                    //better move found
-                alph  = tmp_r.score;
-                bmove = tmp_r.move;
-                assert(bmove >= 0);
-            }
-        }
+        } while (unfinished);
     }
 
     if (firstChild){ //no move was available, this is a leaf node, return score
@@ -132,10 +168,10 @@ int32_t search_deeper(BitBoard_t &board, int32_t depth, int32_t alpha,
     if(firstChild == true){
         score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
     } else {
-        score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha, firstChild);
-        if(alpha < score){
+        // score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha, firstChild);
+        // if(alpha < score){
             score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
-        }
+        // }
     }
     return score;
 }
