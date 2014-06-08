@@ -109,7 +109,6 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
             for (int i = 0 ; i < iter ; ++i){
                 if (allResults[depth][i].score == 0) {
                     unfinished = true;
-                    continue;
                 } else if (allResults[depth][i].move >= 0){
                     tlocal_search_result tmp_r;
 
@@ -138,6 +137,9 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
                         assert(bmove >= 0);
                     }
                 }
+            }
+            if (unfinished){
+                this_thread::yield();
             }
         } while (unfinished);
     }
