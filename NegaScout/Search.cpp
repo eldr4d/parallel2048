@@ -19,41 +19,40 @@ int32_t negaScout(BitBoard_t &board, int32_t depth){
         int32_t temp = veryVeryGreedyAndStupidEvaluationFunction(board);
         temp = (pl == NORMAL) ? temp : -temp;
         // cout << hex << hash << dec << temp << endl;
-        if(pl == player::NORMAL){
-            return max(min(temp, (int32_t)beta), (int32_t)alpha);
-        }else{
-            return max(min(temp, (int32_t)-alpha), (int32_t)-beta);  
-        }
+        return temp;
     }
 
     uint64 hash = board.getHash();
     //alpha beta are passed by reference!!!
     int kiMove;
     int32_t alph = 0, bet = 0;
-    kiMove = tt.retrieveTTEntry(hash, depth, alph, bet, pl == PLACER);
-    if(pl == NORMAL){
-        if(alph != 0 && bet != 0){
-            alpha= alph > (int32_t)alpha ? alph : (int32_t)alpha;
-            beta = bet < (int32_t)beta ? bet : (int32_t)beta;
-        }
-    }else{
-        if(alph != 0 && bet != 0){
-            alpha= -bet > (int32_t)-beta ? -bet : -(int32_t)beta;
-            beta = -alph < (int32_t)-alpha ? -alph : -(int32_t)alpha;
-        }
-    }
-    if(pl == NORMAL){
-        if (alpha >= beta) {
-            // statistics(++hashHitCutOff);
-            return alpha;
-        }
-    }
-    else{
-        if (-beta >= -alpha) {
-            // statistics(++hashHitCutOff);
-            return -beta;
-        }
-    }
+    // if(pl == NORMAL){
+    //     alph = (int32_t)alpha;
+    //     bet = (int32_t)beta;
+    // }else{
+    //     alph=  -(int32_t)beta;
+    //     bet = -(int32_t)alpha;
+    // }
+    kiMove = -1;//tt.retrieveTTEntry(hash, depth, alph, bet, pl == PLACER);
+    // if(pl == NORMAL){
+    //     alpha= alph > (int32_t)alpha ? alph : (int32_t)alpha;
+    //     beta = bet < (int32_t)beta ? bet : (int32_t)beta;
+    // }else{
+    //     alpha= -bet > (int32_t)-beta ? -bet : -(int32_t)beta;
+    //     beta = -alph < (int32_t)-alpha ? -alph : -(int32_t)alpha;
+    // }
+    // if(pl == NORMAL){
+    //     if (alpha >= beta) {
+    //         // statistics(++hashHitCutOff);
+    //         return alpha;
+    //     }
+    // }
+    // else{
+    //     if (-beta >= -alpha) {
+    //         // statistics(++hashHitCutOff);
+    //         return -beta;
+    //     }
+    // }
     int bmove = -1;
 
     bool firstChild = true;
@@ -103,7 +102,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth){
         if(pl == NORMAL){
             if (mIt.allResults[mIt.resIter-1].score >= beta){
                 tt.addTTEntry(hash, depth, mIt.allResults[mIt.resIter-1].move, mIt.allResults[mIt.resIter-1].score, pl==PLACER, Cut_Node);
-                return bet;                         //fail-hard beta cut-off
+                return beta;                         //fail-hard beta cut-off
             }
         }else{
             if (mIt.allResults[mIt.resIter-1].score >= -alpha){
@@ -136,7 +135,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth){
                 if(pl == NORMAL){
                     if (mIt.allResults[iter].score >= beta){
                         tt.addTTEntry(hash, depth, mIt.allResults[iter].move, mIt.allResults[iter].score, pl==PLACER, Cut_Node);
-                        return bet;                         //fail-hard beta cut-off
+                        return beta;                         //fail-hard beta cut-off
                     }
                 }else{
                     if (mIt.allResults[iter].score >= -alpha){
@@ -177,9 +176,9 @@ int32_t negaScout(BitBoard_t &board, int32_t depth){
         ++horizonNodes;
         bool a;
         if(pl == NORMAL){
-            return max(min((int32_t) (board.getHigherTile(&a) << 2), (int32_t)beta), (int32_t)alpha);
+            return (board.getHigherTile(&a) << 2);
         } else{
-            return max(min((int32_t) (board.getHigherTile(&a) << 2), (int32_t)-alpha), (int32_t)-beta);
+            return (board.getHigherTile(&a) << 2);
         }
     }
 
