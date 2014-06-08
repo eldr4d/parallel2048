@@ -9,9 +9,9 @@
 using namespace std;
 
 struct search_result{
-    int32_t score;
-    int32_t move;
-    bool threadSpawned;
+    std::atomic<int32_t> score;
+    std::atomic<int32_t> move;
+    std::atomic<bool> threadSpawned;
 };
 
 template<typename T, player pl, bool mainThread>
@@ -19,14 +19,15 @@ class MoveIterator_t{
     uint64 moves;
 public:
     //total squares * two possible moves for placer in the same square -2 for the always oqupied square
-    struct search_result allResults[16*2-2];
+    struct search_result *allResults;
     int32_t resIter;
 
 public:
     MoveIterator_t(const T &board);
-
-    void searchNextChild(T &board, int killer, int32_t depth, 
-                                int32_t alpha, int32_t beta, bool firstChild){
+    ~MoveIterator_t(){
+        delete allResults;
+    }
+    void searchNextChild(T &board, int killer, int32_t depth, bool firstChild){
         if (pl == player::PLACER){ //if resolved by compiler based on template
             uint64 p;
             if (killer >= 0){
@@ -59,14 +60,14 @@ public:
                 if(true && !firstChild && depth > 7){
                     allResults[resIter].score = 0; //Thread spawned
                     allResults[resIter].threadSpawned = true;
-                    spawnThread<player::NORMAL>(board, depth, alpha, beta, firstChild, &allResults[resIter].score);
+                    spawnThread<player::NORMAL>(board, depth, firstChild, &(allResults[resIter].score));
                 }else{
-                    allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, firstChild);
+                    allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, firstChild);
                     allResults[resIter].threadSpawned = false;
                 }
                 resIter++;
             }else{
-                allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, alpha, beta, firstChild);
+                allResults[resIter].score = search_deeper<player::NORMAL, mainThread>(board, depth, firstChild);
                 resIter++;
             }
             board.undoPlace(p);
@@ -99,14 +100,14 @@ public:
                 if(true && !firstChild && depth > 7){
                     allResults[resIter].score = 0; //Thread spawned
                     allResults[resIter].threadSpawned = true;
-                    spawnThread<player::PLACER>(bd2, depth, alpha, beta, firstChild, &allResults[resIter].score);
+                    spawnThread<player::PLACER>(bd2, depth, firstChild, &(allResults[resIter].score));
                 }else{
-                    allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
+                    allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, firstChild);
                     allResults[resIter].threadSpawned = false;
                 }
                 resIter++;
             }else{
-                allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, alpha, beta, firstChild);
+                allResults[resIter].score = search_deeper<player::PLACER, mainThread>(bd2, depth, firstChild);
                 resIter++;
             }
             assert(resIter < 16*2-2);
@@ -118,6 +119,7 @@ public:
 
 template<typename T, player pl, bool mainThread> 
 MoveIterator_t<T, pl, mainThread>::MoveIterator_t(const T &board){
+    allResults = new struct search_result[16*2-2];
     if (pl == player::PLACER){ //if resolved by compiler based on template
         moves  = board.getEmptyTiles();
         moves |= moves << SQR_POP;

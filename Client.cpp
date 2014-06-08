@@ -17,6 +17,9 @@ BitBoard_t board;
 std::atomic<uint64_t> horizonNodes;
 std::atomic<uint64_t> totalNodes;
 
+std::atomic<int32_t> alpha;
+std::atomic<int32_t> beta;
+
 int GetSide(int argc, char *argv[])
 {
     
@@ -85,12 +88,6 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 
     int32_t depth = 10;
 
-    maskedArguments args;
-    args.alpha = -(numeric_limits<int32_t>::max()-100000);
-    args.beta = (numeric_limits<int32_t>::max()-100000);
-    args.depth = depth;
-    args.board = board;
-
     horizonNodes = 0;
     totalNodes   = 0;
 
@@ -102,27 +99,17 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
     std::chrono::duration<double> elapsed_seconds;
 	double totalSeconds = 0.2;
     do{
+        alpha = -(numeric_limits<int32_t>::max()-100000);
+        beta = numeric_limits<int32_t>::max()-100000;
 		start = std::chrono::system_clock::now();
 		int32_t bestcost = -99999;
 
-        args.writeResult = &bestcost;
         tt.preparePVposition(board);
 		if(pl == NORMAL){
-            //args.pl = NORMAL;
-            //args.color = true;
-            //myThreadPool.useNewThread(args);
-            //while(bestcost == -99999)
-            //    usleep(10);
             move->dir = 1000;
-			bestcost = negaScout<NORMAL, false>(board, depth, -(numeric_limits<int32_t>::max()-100000), numeric_limits<int32_t>::max()-100000, true);
+			bestcost = negaScout<NORMAL, true>(board, depth);
 		}else{
-            // args.pl = PLACER;
-            // args.color = false;
-            // myThreadPool.useNewThread(args);
-            // while(bestcost == -99999)
-            //     usleep(10);
-            // bestcost = -bestcost;
-			bestcost = -negaScout<PLACER, true>(board, depth, -(numeric_limits<int32_t>::max()-100000), (numeric_limits<int32_t>::max()-100000), true);
+			bestcost = -negaScout<PLACER, true>(board, depth);
         }
         tt.extractBest(board, pl, move);
 
