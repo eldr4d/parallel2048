@@ -19,6 +19,11 @@ enum player{
     PLACER,
 };
 
+enum SearchType{
+    PV,
+    ZW
+};
+
 extern std::atomic<uint64_t> horizonNodes;
 extern std::atomic<uint64_t> totalNodes;
 

@@ -12,7 +12,8 @@ using namespace std;
 extern TranspositionTable tt;
 
 extern atomic<int32_t> galpha_pl;
-extern atomic<int32_t> gbeta__pl;
+extern atomic<player>  gpl;
+extern atomic<bool>    ch_search;
 
 
 typedef struct{
