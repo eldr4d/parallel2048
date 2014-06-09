@@ -772,6 +772,13 @@ public:
      */
     void prettyPrint(ostream& out=cout) const;
 
+     /**
+     * @brief Prints board in stantar output out using a color format
+     *
+     * Result printed contains multiple lines and has a human friendly format
+     */
+    void colorPrint() const;
+
     bool operator==(const BitBoard<state_size> &other) const;
 };
 
