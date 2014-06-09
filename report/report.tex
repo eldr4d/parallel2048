@@ -1,0 +1,103 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{templ}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+%\usepackage{multirow}
+%\usepackage{layouts}
+\usepackage{array}
+\newcommand{\sol}[1]{#1} % #1 for solution
+\newcommand{\optional}[1]{#1} % #1 for showing optional
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+% Anomalies
+\setlength{\textheight}{26.0cm}
+
+\begin{document}
+\opening
+%{University}
+{Πολυτεχνείο Κρήτης}
+%{Dept}
+{Τμήμα Ηλεκτρονικών Μηχανικών και Μηχανικών Υπολογιστών}
+%{Course}
+{Αρχιτεκτονική Παράλληλων και Κατανεμημένων Συστημάτων} % - \textlatin{Theory of Computation}}
+%{Term}
+{ΗΡΥ 418}
+%{Assignment}
+{Αναφορά Εργασίας}
+%{Deadline}
+{2014} \vspace{-5ex}
+Περικλής Χρυσόγελος Α.Μ.:\\
+Νικόλαος Κοφινάς Α.Μ.:
+\sol{
+\begin{center}
+\huge\bf Λύσεις
+\end{center}
+\vspace*{-0,5cm}
+}
+
+{\en
+\begin{algorithm}[h!]
+\begin{algorithmic}[1]
+\REQUIRE{ node,depth,$\alpha$,$\beta$,color}
+\ENSURE{ score}
+\IF{node is a terminal node \OR depth = 0}
+\RETURN color $\times$ heuristic evaluation
+\ENDIF
+\FORALL{childs of node}
+\IF{child is not first child}
+\STATE{score := -negascout(child, depth$-1$, $-\alpha-1$, $-\alpha$, -color)}
+\IF{$\alpha<$score$<\beta$}
+\STATE{score := -negascout(child, depth$-1$, $-\beta$, $-\alpha$, -color)}
+\ENDIF
+\ELSE
+\STATE{score := -negascout(child, depth$-1$, $-\beta$, $-\alpha$, -color)}
+\ENDIF
+\STATE  $\alpha$:=max($\alpha$,score);
+\IF{$\alpha \ge \beta$}
+\STATE break
+\ENDIF
+\ENDFOR
+\RETURN $\alpha$
+\end{algorithmic}
+\caption{Negascout algorithm}
+\label{Alg:CYKalg}
+\end{algorithm}
+}
+
+
+
+{\en
+\begin{algorithm}[h!]
+\begin{algorithmic}[1]
+\REQUIRE{ node,depth,$\alpha$,$\beta$,color}
+\ENSURE{ score}
+\IF{node is a terminal node \OR depth = 0}
+\RETURN color $\times$ heuristic evaluation
+\ENDIF
+\FORALL{childs of node}
+\IF{child is not first child}
+\STATE{score := -negascout(child, depth$-1$, $-\alpha-1$, $-\alpha$, -color)}
+\IF{$\alpha<$score$<\beta$}
+\STATE{score := -negascout(child, depth$-1$, $-\beta$, $-\alpha$, -color)}
+\ENDIF
+\ELSE
+\STATE{score := -negascout(child, depth$-1$, $-\beta$, $-\alpha$, -color)}
+\ENDIF
+\STATE  $\alpha$:=max($\alpha$,score);
+\IF{$\alpha \ge \beta$}
+\STATE break
+\ENDIF
+\ENDFOR
+\RETURN $\alpha$
+\end{algorithmic}
+\caption{Parallel Negascout algorithm}
+\label{Alg:CYKalg}
+\end{algorithm}
+}
+\end{document}
+

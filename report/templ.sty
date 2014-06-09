@@ -1,0 +1,155 @@
+%
+% Definitions
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{MGLassignment}[2003/10/28 Exercise]
+
+%\RequirePackage[dvips]{graphicx}
+%\RequirePackage[dvips]{color}
+\RequirePackage{colortbl}
+
+%\usepackage{psfig}
+\usepackage{epsfig}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amscd}
+\usepackage{multicol}
+\usepackage{latexsym}
+\usepackage{multirow}
+\usepackage{a4}
+\usepackage[english,greek]{babel}
+\usepackage[iso-8859-7]{inputenc}
+\usepackage{synttree}
+\usepackage{epic}
+\usepackage{enumerate}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=blue
+}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usetikzlibrary{arrows,automata}
+
+
+\newcommand{\gr}{\selectlanguage{greek}}
+\newcommand{\en}{\selectlanguage{english}}
+\newcommand{\notes}[1]{ \comment{ #1 } }
+
+
+
+
+
+
+% Anomalies
+\definecolor{lightgray}{gray}{.95}
+% Define my name
+\newcommand{\myname}{Διδάσκων: Μ. Γ. Λαγουδάκης}
+% Title of exercises
+\newcommand{\Exersise}[1]{\section*{#1}}
+\newcommand{\Exercise}[1]{\section*{#1}}
+% Solution env. Default empty
+\newcommand{\solution}[1]{}
+% Define text for the down-left side of the gray box
+\newcommand{\deadline}{}
+% Define the line under the box. Default empty
+\newcommand{\nameline}{}
+% A very handy env. simalar to paragraph with line-brake
+\newcommand{\boldmark}[1]{ \vspace{2ex}\noindent\textbf{#1}\\ }
+% A line with LASTNAME-NAME space to write and #1 underneath
+\newcommand{\setnameline}[1]{
+    \begin{center}
+    ΟΝΟΜΑΤΕΠΩΝΥΜΟ:\underline{\hspace{10cm}}\\
+    {\footnotesize {#1}}
+    \end{center}
+}
+% Up in the box
+\newcommand{\upgraybox}[2]{
+    \begin{large}\sc
+         {\Huge\ }#1\\
+         #2
+    \end{large}
+}
+% The gray box!!!
+\newcommand{\graybox}[4]{
+    \begin{tabular}
+        {|>{\columncolor{lightgray}}c|}
+        \hline
+        \\
+        \textbf{\large{#1}}\\
+        \\
+        \makebox[5cm][l]{#2}
+        \makebox[4.5cm][c]{\textbf{#3}}
+        \makebox[5cm][r]{\deadline\ #4}\\
+        \\
+        \hline
+    \end{tabular}
+}
+
+
+% Page definitions
+\setlength{\textheight}{24cm}
+\setlength{\textwidth}{15.5cm}
+\setlength{\oddsidemargin}{0.2cm}
+\setlength{\evensidemargin}{0.2cm}
+\setlength{\topmargin}{-1.2cm}
+
+% 1.2 spacing
+\renewcommand{\baselinestretch}{1.2}
+
+
+%
+% Declare Options
+%
+\DeclareOption{examination}{
+    \renewcommand{\deadline}{}
+    \renewcommand{\nameline}{\setnameline{(η εκφώνηση να επιστραφεί με το γραπτό)}}
+    \renewcommand{\baselinestretch}{1}
+}
+\DeclareOption{solution}{
+    \renewcommand{\solution}[1]{ \section*{Λύση}{\it #1 } }
+}
+\DeclareOption{questionnaire}{
+    \renewcommand{\deadline}{}
+    \renewcommand{\nameline}{\setnameline{(προαιρετικό)}}
+    \renewcommand{\baselinestretch}{1}
+}
+\DeclareOption{syllabus}{
+    \renewcommand{\deadline}{}
+    \renewcommand{\myname}{}
+    \renewcommand{\nameline}{}
+    \renewcommand{\baselinestretch}{1}
+}
+
+%
+% \ProcessOptions
+%
+\ProcessOptions
+
+% Create all up to start of text
+% \opening
+%   {University}
+%   {Dept}
+%   {Course}
+%   {Term}
+%   {Assignment}
+%   {Deadline}
+\def\opening#1#2#3#4#5#6{
+    \sloppy
+    \pagestyle{empty}
+    \vspace*{-70pt}
+    \begin{center}
+        \upgraybox{#1}{#2}
+        \vspace*{3ex}
+
+        \graybox{#3}{#4}{#5}{#6}
+    \end{center}
+    \nameline
+    \vspace*{3ex}
+}
