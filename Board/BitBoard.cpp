@@ -327,7 +327,7 @@ void BitBoard<state_size>::colorPrint() const{
     cout << "\033[?25l\033[2J\033[H";
     cout << "\033[H";
 
-    cout << "2048 " << score << " pts" << endl << endl;
+    cout << "2048 Game " << setw(14) << score << " pts" << endl << endl;
 
     for (int i = 0 ; i < BOARD_SIZE ; ++i){
         for (int j = 0 ; j < BOARD_SIZE ; ++j){
@@ -343,12 +343,12 @@ void BitBoard<state_size>::colorPrint() const{
             int iter = 2*value;
             cout << "\033[38;5;"<<original[foreground+iter]<<";48;5;"<<original[background+iter]<<"m";
             if (value!=0) {
-                char s[8];
-                snprintf(s,8,"%u",1<<value);
-                int8_t t = 7-strlen(s);
+                // char s[8];
+                // snprintf(s,8,"%u",1<<value);
+                int8_t t = 7-to_string(1 << value).length();
                 //I cannot find a way to transform this printf to a cout :P
                 
-                printf("%*s%s%*s",t-t/2,"",s,t/2,"");
+                cout << setw(t-t/2) << "" << (1<<value) << setw(t/2) << "";
             } else {
                 cout << "   ·   ";
             }
