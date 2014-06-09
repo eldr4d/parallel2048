@@ -316,6 +316,59 @@ void BitBoard<state_size>::prettyPrint(ostream& out) const{
     out << "   \n";
 }
 
+template<unsigned int state_size>
+void BitBoard<state_size>::colorPrint() const{
+    string color; 
+    int original[32] = {8,255,1,255,2,255,3,255,4,255,5,255,6,255,7,255,9,0,10,0,11,0,12,0,13,0,14,0,255,0,255,0};
+    uint8_t background = 0;
+    uint8_t foreground = 1;
+    string reset = "\033[m";
+
+    cout << "\033[?25l\033[2J\033[H";
+    cout << "\033[H";
+
+    cout << "2048 " << score << " pts" << endl << endl;
+
+    for (int i = 0 ; i < BOARD_SIZE ; ++i){
+        for (int j = 0 ; j < BOARD_SIZE ; ++j){
+            tile_value value = getTile(i, j);
+            int iter = 2*value;
+            cout << "\033[38;5;"<<original[foreground+iter]<<";48;5;"<<original[background+iter]<<"m";
+            cout << "       ";
+            cout << reset;
+        }
+        cout << endl;
+        for (int j = 0 ; j < BOARD_SIZE ; ++j){
+            tile_value value = getTile(i, j);
+            int iter = 2*value;
+            cout << "\033[38;5;"<<original[foreground+iter]<<";48;5;"<<original[background+iter]<<"m";
+            if (value!=0) {
+                char s[8];
+                snprintf(s,8,"%u",1<<value);
+                int8_t t = 7-strlen(s);
+                //I cannot find a way to transform this printf to a cout :P
+                
+                printf("%*s%s%*s",t-t/2,"",s,t/2,"");
+            } else {
+                cout << "   ·   ";
+            }
+            cout<<reset;
+        }
+        cout << endl;
+        for (int j = 0 ; j < BOARD_SIZE ; ++j){
+            tile_value value = getTile(i, j);
+            int iter = 2*value;
+            cout << "\033[38;5;"<<original[foreground+iter]<<";48;5;"<<original[background+iter]<<"m";
+            cout << "       ";
+            cout << reset;
+        }
+        cout << endl;
+    }
+    cout << endl;
+    cout << "\033[A";
+}
+
+
 template<unsigned int state_size> template<dir d>
 void BitBoard<state_size>::combine(){
     uint64 pre = 0;

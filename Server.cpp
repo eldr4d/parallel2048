@@ -296,7 +296,7 @@ int main (int argc, char *argv[])
 
 
     for (i=0 ; i < games && all_ok; i++) {
-    	cout << "Playing game " << i << " out of " << games << endl;
+    	//cout << "Playing game " << i << " out of " << games << endl;
         row = col = dir = v = -1;
         time_left[0] = time_left[1] = time_limit;
 		board.clear();
@@ -311,8 +311,10 @@ int main (int argc, char *argv[])
         } 
 
         out_msg.board = board;
-		cout << board << endl;
-		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;
+		/*cout << board << endl;
+		cout << "Normal: " << time_left[0] << " Placer: " << time_left[1] << endl << endl;*/
+
+        board.colorPrint();
 
         InitServerComm (&sock, &clnt_sock[0], &clnt_sock[1], port);
 
@@ -355,11 +357,13 @@ int main (int argc, char *argv[])
                 }
             }
             board.score -= totalNumberOfInitFours*4;
-			cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
+            board.colorPrint();
+
+			/*cout << "+-+-+-+-+- Normal -+-+-+-+-+" << endl;
             cout << totalNumberOfInitFours << endl;
             cout << board.getMaxChain() << endl;
 			cout << board << endl;
-			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
+			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;*/
             
 			//Placer player
             out_msg.status = GIVE_MOVE;
@@ -405,10 +409,11 @@ int main (int argc, char *argv[])
             }
             board.score -= totalNumberOfInitFours*4;
 
-			cout << "+-+-+-+-+- Placer -+-+-+-+-+" << endl;
+            board.colorPrint();
+			/*cout << "+-+-+-+-+- Placer -+-+-+-+-+" << endl;
             cout << totalNumberOfInitFours << endl;
 			cout << board << endl;
-			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;
+			cout << "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+" << endl;*/
         }
 
         if (!technical_lose){

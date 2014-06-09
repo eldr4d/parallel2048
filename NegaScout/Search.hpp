@@ -15,7 +15,6 @@ extern atomic<int32_t> galpha_pl;
 extern atomic<player>  gpl;
 extern atomic<bool>    ch_search;
 
-
 typedef struct{
     player pl;
     int32_t alpha, beta, depth;

@@ -84,7 +84,6 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
             if (bmove >= 0){
                 tt.addTTEntry(hash, depth, alph, bmove, pl==PLACER, Cut_Node);
             }
-        // if ((!mainThread) && tmp_r.score >= ((pl == NORMAL) ? (int32_t) gbeta__pl : -galpha_pl)){
             return -galpha_pl;//((pl == NORMAL) ? (int32_t) gbeta__pl : -galpha_pl);//MAX_TT_SCORE;
         }
 
@@ -152,10 +151,6 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta,
         return board.getHigherTile(&a) << 2;
     }
 
-    if (cont_cond){
-
-    }
-
     NodeType nt = PV__Node;
     if (bmove < 0){                                     //All-Node
         nt    = All_Node;
@@ -211,9 +206,9 @@ void spawnThread(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, 
 int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     bool inCorner = false;
     int32_t v2 = boardForEv.getHigherTile(&inCorner);
-    int32_t score = (v2 << 6) + 1;
+    int32_t score = (v2 << 7) + 1;
     if(inCorner){
-        score += boardForEv.getMaxCornerChain() << 5;
+        score += boardForEv.getMaxCornerChain() << 8;
         score <<= 2;
     }
     score += boardForEv.getMaxChain() << 3;
