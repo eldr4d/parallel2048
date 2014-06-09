@@ -80,8 +80,6 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 		start = std::chrono::system_clock::now();
 		int32_t bestcost(-99999);
         galpha_pl = MIN_TT_SCORE+1;
-        gbeta__pl = MAX_TT_SCORE-1;
-
         tt.preparePVposition(board);
 		if(pl == NORMAL){
             move->dir = 1000;                                                       //TODO REMOVE
@@ -150,17 +148,17 @@ int main (int argc, char *argv[])
         while (msg.status != GAME_ENDED && msg.status != ABORT) {
 
 			if(side == PLACER){
-				/*ptile c = board.placeRandom();
+				ptile c = board.placeRandom();
                 cout << board << endl;
                 SendPlacerAndGetNormalMove (socket, c.row, c.col, c.vlog, &msg);
-                cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;*/
-                uint64 f = board.getEmptyTiles();
+                cout << "My move is " << c.row << "," << c.col << " v = " << (1 << c.vlog) << endl << endl;
+                /*uint64 f = board.getEmptyTiles();
                 f = pop_lsb(f);
                 board.makePlace(f);
                 Move m;
                 BitBoard_t::intToMove(&m, (int) square(f), PLACER);
                 SendPlacerAndGetNormalMove (socket, m.row, m.col, m.v, &msg);
-                cout << "My move is " << m.row << "," << m.col << " v = " << (1 << m.v) << endl << endl;
+                cout << "My move is " << m.row << "," << m.col << " v = " << (1 << m.v) << endl << endl;*/
 		       	/*
 				Move move;
 				ExploreTree(board, &move, PLACER);
