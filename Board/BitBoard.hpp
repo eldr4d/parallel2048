@@ -85,6 +85,11 @@ enum bitNormalMove{
     b_down  = 8
 };
 
+template<typename T>
+constexpr T tabs(T x){
+    return (x >= 0) ? x : -x;
+}
+
 /**
  * @brief Constants and functions which depend on direction (2)
  *
@@ -148,7 +153,7 @@ public:
  * 
  * @tparam          d   direction (left, right, up, down)
  */
-template<d4 d> class d4c: public dconsts<(dir) abs((int) d)>{
+template<d4 d> class d4c: public dconsts<(dir) tabs((int) d)>{
 public:
     /**
      * @brief Reverse direction
@@ -157,7 +162,7 @@ public:
     /**
      * @brief Vertical if current direction is up or down, horizontal otherwise
      */
-    static const dir base   = (dir) abs((int) d);
+    static const dir base   = (dir) tabs((int) d);
 
     /**
      * @brief Mask without line 0 vertical to current direction

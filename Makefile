@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -pthread -Wall -march=native -Wl,--no-as-needed -g3 
+CXXFLAGS = -std=c++11 -pthread -Wall -Wextra -pedantic -Wpedantic -march=native -Wl,--no-as-needed -g3 
 
 TFLAGS = -O3
 TFLAGS+= -finline 
@@ -41,7 +41,7 @@ parallel:clean all
 single:clean all
 compare:clean all
 
-all:client server
+all:release
 
 release: clean client server
 

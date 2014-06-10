@@ -84,9 +84,9 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 		if(pl == NORMAL){
             move->dir = 1000;                                                       //TODO REMOVE
 
-			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
+			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
 		}else{
-			bestcost = -negaScout<PLACER, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1, true);
+			bestcost = -negaScout<PLACER, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
         }
         tt.extractBest(board, pl, move);
 
@@ -108,7 +108,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         elapsed_seconds= end-start;
         totalSeconds -= elapsed_seconds.count();
 		depth++;
-    }while(totalSeconds>0 && depth < 50);
+    }while(totalSeconds>0 && depth < 30);
 
     return 0;
 }

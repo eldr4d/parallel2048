@@ -13,7 +13,7 @@ atomic<player>  gpl;
 atomic<bool>    ch_search;
 
 template<player pl, bool mainThread>
-int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst){
+int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta){
 #ifndef NDEBUG
     ++totalNodes;
 #endif
@@ -167,11 +167,11 @@ int32_t search_deeper(BitBoard_t &board, int32_t depth, int32_t alpha,
                                                 int32_t beta, bool firstChild){
     int32_t score;
     if(firstChild == true){
-        score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
+        score = -negaScout<other, mainThread>(board, depth, -beta, -alpha);
     } else {
-        score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha, firstChild);
+        score = -negaScout<other, mainThread>(board, depth, -alpha-1, -alpha);
         if(alpha < score){
-            score = -negaScout<other, mainThread>(board, depth, -beta, -alpha, firstChild);
+            score = -negaScout<other, mainThread>(board, depth, -beta, -alpha);
         }
     }
     return score;
@@ -208,10 +208,10 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     int32_t v2 = boardForEv.getHigherTile(&inCorner);
     int32_t score = (v2 << 7) + 1;
     if(inCorner){
-        score += boardForEv.getMaxCornerChain() << 8;
+        score += boardForEv.getMaxCornerChain() << 7; // +2 = 9!!!
         score <<= 2;
     }
-    score += boardForEv.getMaxChain() << 3;
+    score += boardForEv.getMaxChain() << 4;
     int tmp = boardForEv.countFreeTiles() - 7;
     tmp = (tmp < 0) ? -tmp : tmp;
     score += (7-tmp) << 2;
@@ -220,10 +220,10 @@ int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     return score;
 }
 
-template int32_t negaScout<player::PLACER, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
-template int32_t negaScout<player::NORMAL, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
-template int32_t negaScout<player::PLACER, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
-template int32_t negaScout<player::NORMAL, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool amIfirst);
+template int32_t negaScout<player::PLACER, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
+template int32_t negaScout<player::NORMAL, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
+template int32_t negaScout<player::PLACER, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
+template int32_t negaScout<player::NORMAL, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta);
 template int32_t search_deeper<player::PLACER, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
 template int32_t search_deeper<player::NORMAL, true>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
 template int32_t search_deeper<player::PLACER, false>(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, bool firstChild);
