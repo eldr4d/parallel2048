@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++11 -pthread -Wall -Wextra -pedantic -Wpedantic -march=native -Wl,--no-as-needed -g3 
+CXXFLAGS = -std=c++11 -pthread -Wall -pedantic -Wpedantic -march=native -Wl,--no-as-needed -g3 
 
 TFLAGS = -O3
 TFLAGS+= -finline 
@@ -29,86 +29,100 @@ OBJ_SER = $(SRC_SER:.cpp=.o)
 SRC_CLN = Communication/Client-comm.cpp Client.cpp NegaScout/Search.cpp
 OBJ_CLN = $(SRC_CLN:.cpp=.o)
 
-release: CXXFLAGS += $(TFLAGS)
+PAR_DIR=parallel
+SIN_DIR=single
+
+BIN_ROOT=bin
+OBJ_ROOT=obj
+DEP_ROOT=depend
+
+BIN_PAR=$(BIN_ROOT)/$(PAR_DIR)/
+BIN_SIN=$(BIN_ROOT)/$(SIN_DIR)/
+
+OBJ_PAR=$(OBJ_ROOT)/$(PAR_DIR)/
+OBJ_SIN=$(OBJ_ROOT)/$(SIN_DIR)/
+
+DEP_PAR=$(DEP_ROOT)/$(PAR_DIR)/
+DEP_SIN=$(DEP_ROOT)/$(SIN_DIR)/
+
+SED_OPD=$(subst /,\/,$(OBJ_PAR))
+SED_OSD=$(subst /,\/,$(OBJ_SIN))
+
+SED_DPD=$(subst /,\/,$(DEP_PAR))
+SED_DSD=$(subst /,\/,$(DEP_SIN))
+
+CXX_SOURCES = $(SRC_SER) $(SRC_CLN) $(SRC_ALL)
+
+release:CXXFLAGS += $(TFLAGS)
 
 CXXFLAGS += $(LDFLAGS)
 
-parallel:CXXFLAGS += -DPARALLELIMPL=true
-single:CXXFLAGS += -DPARALLELIMPL=false
-compare:CXXFLAGS += -DCOMPARE
+parallel:PS_IMP:= -DPARALLELIMPL=true
+parallel:BIN_DIR:= $(BIN_PAR)
+parallel:IMP_DIR:= $(PAR_DIR)
+parallel:OBJ_DIR:= $(OBJ_PAR)
+parallel:OBJ_ALL_D:= $(addprefix $(OBJ_PAR), $(OBJ_ALL))
+parallel:OBJ_SER_D:= $(addprefix $(OBJ_PAR), $(OBJ_SER))
+parallel:OBJ_CLN_D:= $(addprefix $(OBJ_PAR), $(OBJ_CLN))
 
-parallel:clean all
-single:clean all
-compare:clean all
+single:PS_IMP:= -DPARALLELIMPL=false
+single:BIN_DIR:= $(BIN_SIN)
+single:IMP_DIR:= $(SIN_DIR)
+single:OBJ_DIR:= $(OBJ_SIN)
+single:OBJ_ALL_D:= $(addprefix $(OBJ_SIN), $(OBJ_ALL))
+single:OBJ_SER_D:= $(addprefix $(OBJ_SIN), $(OBJ_SER))
+single:OBJ_CLN_D:= $(addprefix $(OBJ_SIN), $(OBJ_CLN))
 
-all:release
+$(BIN_PAR)server:$(addprefix $(OBJ_PAR), $(OBJ_ALL) $(OBJ_SER))
+$(BIN_PAR)client:$(addprefix $(OBJ_PAR), $(OBJ_ALL) $(OBJ_CLN))
+$(BIN_SIN)server:$(addprefix $(OBJ_SIN), $(OBJ_ALL) $(OBJ_SER))
+$(BIN_SIN)client:$(addprefix $(OBJ_SIN), $(OBJ_ALL) $(OBJ_CLN))
 
-release: clean client server
+OBJ_FILES:=$(addprefix $(OBJ_PAR), $(OBJ_ALL) $(OBJ_SER) $(OBJ_CLN)) $(addprefix $(OBJ_SIN), $(OBJ_ALL) $(OBJ_SER) $(OBJ_CLN))
+
+
+space= 
+#do no remove this lines!!! needed!!!
+space+= 
+
+vpath %.o $(subst $(space),:,$(dir $(OBJ_FILES)))
+vpath %.cpp $(subst $(space),:,$(dir $(CXX_SOURCES)))
+
+parallel:$(BIN_PAR)server $(BIN_PAR)client
+single:$(BIN_SIN)server $(BIN_SIN)client
+
+.PHONY: all parallel single release debug
+
+all: release
+release:clean | parallel single
+debug:clean | parallel single
+
+%.o: 
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PS_IMP) -c $(subst $(OBJ_DIR),,$(@:.o=.cpp)) -o $@
 
 clean:
-	-rm $(OBJ_ALL) $(OBJ_SER) $(OBJ_CLN) server client
+	-rm -r $(OBJ_ROOT) $(BIN_ROOT) $(DEP_ROOT)
+	-rm $(PAR_DIR)_server $(PAR_DIR)_client $(SIN_DIR)_server $(SIN_DIR)_client
+	mkdir -p $(BIN_PAR) $(BIN_SIN) $(OBJ_PAR) $(OBJ_SIN) $(DEP_PAR) $(DEP_SIN)
+	mkdir -p $(dir $(OBJ_FILES))
 
-server:$(OBJ_ALL) $(OBJ_SER)
-	$(CXX) $(CXXFLAGS) -o server $(OBJ_ALL) $(OBJ_SER) 
+%server:
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PS_IMP) -o $@ $^
+	-@rm $(IMP_DIR)_server
+	ln -rs $@ $(IMP_DIR)_server
 
-client:$(OBJ_ALL) $(OBJ_CLN)
-	$(CXX) $(CXXFLAGS) -o client $(OBJ_ALL) $(OBJ_CLN) 
+%client:
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PS_IMP) -o $@ $^
+	-@rm $(IMP_DIR)_client
+	ln -rs $@ $(IMP_DIR)_client
 
-depend:
-	makedepend $(CFLAGS) $(SRC_SER) $(SRC_CLN) $(SRC_ALL)
+$(DEP_PAR)%.d: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) -MM $(CPPFLAGS) $(CXXFLAGS) -DPARALLELIMPL=true  $< | sed -r 's/^(\S+).(\S+):/$(SED_OPD)$(subst /,\/,$(<:.cpp=.o)) $(SED_DPD)$(subst /,\/,$(<:.cpp=.d)): \\\n/g' > $@
 
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+$(DEP_SIN)%.d: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) -MM $(CPPFLAGS) $(CXXFLAGS) -DPARALLELIMPL=false $< | sed -r 's/^(\S+).(\S+):/$(SED_OSD)$(subst /,\/,$(<:.cpp=.o)) $(SED_DSD)$(subst /,\/,$(<:.cpp=.d)): \\\n/g' > $@
 
-Communication/Comm.o: Communication/Comm.hpp /usr/include/netinet/in.h
-Communication/Comm.o: /usr/include/features.h /usr/include/stdc-predef.h
-Communication/Comm.o: /usr/include/stdint.h /usr/include/endian.h
-Communication/Comm.o: /usr/include/netdb.h /usr/include/rpc/netdb.h
-Communication/Comm.o: /usr/include/unistd.h /usr/include/getopt.h
-Communication/Comm.o: /usr/include/arpa/inet.h /usr/include/string.h
-Communication/Comm.o: /usr/include/xlocale.h
-Server.o: /usr/include/unistd.h /usr/include/features.h
-Server.o: /usr/include/stdc-predef.h /usr/include/getopt.h
-Server.o: Communication/Comm.hpp /usr/include/netinet/in.h
-Server.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
-Server.o: /usr/include/rpc/netdb.h /usr/include/arpa/inet.h
-Server.o: /usr/include/string.h /usr/include/xlocale.h
-Server.o: Communication/Protocol.hpp Definitions.hpp Board/BitBoard.hpp
-Server.o: Board/BitUtils.hpp Board/BitBoard.hpp
-Communication/Client-comm.o: Communication/Client-comm.hpp
-Communication/Client-comm.o: /usr/include/time.h /usr/include/features.h
-Communication/Client-comm.o: /usr/include/stdc-predef.h
-Communication/Client-comm.o: /usr/include/xlocale.h Communication/Comm.hpp
-Communication/Client-comm.o: /usr/include/netinet/in.h /usr/include/stdint.h
-Communication/Client-comm.o: /usr/include/endian.h /usr/include/netdb.h
-Communication/Client-comm.o: /usr/include/rpc/netdb.h /usr/include/unistd.h
-Communication/Client-comm.o: /usr/include/getopt.h /usr/include/arpa/inet.h
-Communication/Client-comm.o: /usr/include/string.h Communication/Protocol.hpp
-Communication/Client-comm.o: Definitions.hpp Board/BitBoard.hpp
-Communication/Client-comm.o: Board/BitUtils.hpp
-Client.o: NegaScout/TranspositionTable.hpp Communication/Protocol.hpp
-Client.o: Definitions.hpp Board/BitBoard.hpp Board/BitUtils.hpp
-Client.o: Board/BitUtils.hpp Communication/Client-comm.hpp
-Client.o: /usr/include/time.h /usr/include/features.h
-Client.o: /usr/include/stdc-predef.h /usr/include/xlocale.h
-Client.o: Communication/Comm.hpp /usr/include/netinet/in.h
-Client.o: /usr/include/stdint.h /usr/include/endian.h /usr/include/netdb.h
-Client.o: /usr/include/rpc/netdb.h /usr/include/unistd.h
-Client.o: /usr/include/getopt.h /usr/include/arpa/inet.h
-Client.o: /usr/include/string.h Communication/Protocol.hpp Board/BitBoard.hpp
-Client.o: NegaScout/MoveIterator.hpp NegaScout/Search.hpp
-Client.o: Communication/Client-comm.hpp NegaScout/TranspositionTable.hpp
-Client.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h /usr/include/libio.h
-Client.o: /usr/include/_G_config.h /usr/include/wchar.h NegaScout/Search.hpp
-NegaScout/Search.o: NegaScout/Search.hpp Communication/Client-comm.hpp
-NegaScout/Search.o: NegaScout/TranspositionTable.hpp Board/BitBoard.hpp
-NegaScout/Search.o: Board/BitUtils.hpp Definitions.hpp
-NegaScout/Search.o: ThreadPool/ThreadPool.hpp /usr/include/stdio.h
-NegaScout/Search.o: /usr/include/features.h /usr/include/stdc-predef.h
-NegaScout/Search.o: /usr/include/libio.h /usr/include/_G_config.h
-NegaScout/Search.o: /usr/include/wchar.h /usr/include/unistd.h
-NegaScout/Search.o: /usr/include/getopt.h NegaScout/MoveIterator.hpp
-NegaScout/Search.o: Board/BitUtils.hpp Communication/Protocol.hpp
-Board/BitBoard.o: Board/BitBoard.hpp Board/BitUtils.hpp Definitions.hpp
-Board/BitUtils.o: Board/BitUtils.hpp
-Utils.o: Communication/Protocol.hpp Definitions.hpp Board/BitBoard.hpp
-Utils.o: Board/BitUtils.hpp Board/BitBoard.hpp
+-include $(addprefix $(DEP_PAR), $(CXX_SOURCES:.cpp=.d))
+-include $(addprefix $(DEP_SIN), $(CXX_SOURCES:.cpp=.d))

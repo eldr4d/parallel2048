@@ -28,3 +28,20 @@ html
 latex
 
 
+parallel2048.sublime-project
+parallel2048.sublime-workspace
+
+single_client
+single_server
+
+parallel_client
+parallel_server
+
+hash_test.cpp
+
+*.fdb_latexmk
+*.aux
+*.log
+*.synctex.gz
+
+Makefile.bak

@@ -11,6 +11,7 @@ search_result allResults[64][16*2-2];
 atomic<int32_t> galpha_pl;
 atomic<player>  gpl;
 atomic<bool>    ch_search;
+atomic<bool>    go_search;
 
 template<player pl, bool mainThread>
 int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta){
@@ -51,7 +52,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta)
 
     int iter = 0;
     bool cont_cond;
-    while( (cont_cond = (firstChild || ch_search)) ) { //assignment!!!
+    while( (cont_cond = (firstChild || (ch_search && go_search))) ){//assignment
         tlocal_search_result tmp_r = mIt.searchNextChild(board, kiMove, 
             depth-1, alph, bet, firstChild, &(allResults[depth][iter].score));
         kiMove = -1;
@@ -82,7 +83,7 @@ int32_t negaScout(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta)
         }
         if ((!mainThread) && pl != gpl && tmp_r.score >= -galpha_pl){
             if (bmove >= 0){
-                tt.addTTEntry(hash, depth, alph, bmove, pl==PLACER, Cut_Node);
+                tt.addTTEntry(hash, depth, bmove, alph, pl==PLACER, Cut_Node);
             }
             return -galpha_pl;//((pl == NORMAL) ? (int32_t) gbeta__pl : -galpha_pl);//MAX_TT_SCORE;
         }
@@ -206,12 +207,12 @@ void spawnThread(BitBoard_t &board, int32_t depth, int32_t alpha, int32_t beta, 
 int32_t veryVeryGreedyAndStupidEvaluationFunction(BitBoard_t boardForEv){
     bool inCorner = false;
     int32_t v2 = boardForEv.getHigherTile(&inCorner);
-    int32_t score = (v2 << 7) + 1;
+    int32_t score = (v2 << 8) + 1;
     if(inCorner){
-        score += boardForEv.getMaxCornerChain() << 7; // +2 = 9!!!
+        score += boardForEv.getMaxCornerChain() << 8; // +2 = 9!!!
         score <<= 2;
     }
-    score += boardForEv.getMaxChain() << 4;
+    score += boardForEv.getMaxChain() << 6;
     int tmp = boardForEv.countFreeTiles() - 7;
     tmp = (tmp < 0) ? -tmp : tmp;
     score += (7-tmp) << 2;

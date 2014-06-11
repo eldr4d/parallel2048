@@ -6,6 +6,9 @@
 #include "NegaScout/MoveIterator.hpp"
 #include "NegaScout/Search.hpp"
 #include <atomic>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 using namespace std;
 
@@ -61,9 +64,27 @@ void GetUserMove (int *dir)
     }
 }
 
+mutex m;
+condition_variable cv;
+
+void start_searcher(BitBoard_t board, player pl, int depth, int32_t *bestcost){
+    unique_lock<mutex> lk(m);
+    lk.unlock();//wait for explore tree to get in wait
+
+    tt.preparePVposition(board);
+    if(pl == NORMAL){
+        *bestcost = +negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
+    }else{
+        *bestcost = -negaScout<PLACER, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
+    }
+    lk.lock();
+    cv.notify_all();
+    lk.unlock();//wait for explore tree to get in wait
+}
+
 int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
 {
-
+    Move mv;
     int32_t depth = 10;
 
     horizonNodes = 0;
@@ -75,20 +96,27 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
                                             std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds;
-	double totalSeconds = 0.2;
+	double totalSeconds = 0.8;
+    std::chrono::time_point<std::chrono::system_clock> glob_end = 
+            glob_start + chrono::milliseconds((int) (1000*totalSeconds));
+    bool firstIter = true;
     do{
 		start = std::chrono::system_clock::now();
 		int32_t bestcost(-99999);
+        go_search = true;
+        cv_status st;
 
-        tt.preparePVposition(board);
-		if(pl == NORMAL){
-            move->dir = 1000;                                                       //TODO REMOVE
-
-			bestcost = negaScout<NORMAL, PARALLELIMPL>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
-		}else{
-			bestcost = -negaScout<PLACER, true>(board, depth, MIN_TT_SCORE+1, MAX_TT_SCORE-1);
+        {
+            unique_lock<mutex> lk(m);
+            thread searcher(start_searcher, board, pl, depth, &bestcost);
+            st = cv.wait_until(lk, glob_end);
+            if (st == cv_status::timeout){
+                go_search = false;
+                cv.wait_for(lk, chrono::seconds(60));
+            }
+            searcher.join();
         }
-        tt.extractBest(board, pl, move);
+        tt.extractBest(board, pl, &mv);
 
         //based on UCI format
         cout << "info";
@@ -107,7 +135,11 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
         end = std::chrono::system_clock::now();
         elapsed_seconds= end-start;
         totalSeconds -= elapsed_seconds.count();
+        if (firstIter || st == cv_status::no_timeout){
+            *move = mv;
+        }
 		depth++;
+        firstIter = false;
     }while(totalSeconds>0 && depth < 30);
 
     return 0;
