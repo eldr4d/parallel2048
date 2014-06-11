@@ -95,7 +95,7 @@ int32_t ExploreTree(BitBoard_t board, Move *move, player pl)
                                             std::chrono::system_clock::now();
 
     std::chrono::duration<double> elapsed_seconds;
-	double totalSeconds = 0.2;
+	double totalSeconds = 0.8;
     std::chrono::time_point<std::chrono::system_clock> glob_end = 
             glob_start + chrono::milliseconds((int) (1000*totalSeconds));
     bool firstIter = true;
