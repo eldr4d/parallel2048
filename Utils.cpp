@@ -17,3 +17,15 @@ ostream& operator<<(ostream& os, const Move& obj){
     }
     return os;
 }
+
+bool validMove(const Move &obj){
+    switch (obj.dir){
+        case ((int) bitNormalMove::b_left ): return true;
+        case ((int) bitNormalMove::b_right): return true;
+        case ((int) bitNormalMove::b_up   ): return true;
+        case ((int) bitNormalMove::b_down ): return true;
+        case (-1)                          : return true;
+        default                            : return false;
+    }
+    return false;
+}

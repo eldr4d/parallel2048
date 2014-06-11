@@ -36,6 +36,7 @@ typedef struct {
 typedef char FirstMsgToServer;  /* 0-Normal, 1-Placer */
 
 ostream& operator<<(ostream& os, const Move& obj);
+bool validMove(const Move& obj);
 #endif //_PROTOCOL_H
 
 
